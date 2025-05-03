@@ -1,0 +1,1 @@
+{"skeleton":{"hash":"f96vBorTWRg","spine":"4.1.24","x":-235,"y":17,"width":471,"height":103},"bones":[{"name":"root"}],"slots":[{"name":"machine_1","bone":"root","attachment":"machine_1"}],"skins":[{"name":"default","attachments":{"machine_1":{"machine_1":{"x":0.5,"y":68.5,"width":471,"height":103}}}}],"animations":{"idle":{}}}

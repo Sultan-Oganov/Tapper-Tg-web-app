@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenClicker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=New+Amsterdam&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/colyseus.js@0.15.25/dist/colyseus.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  </head>
+  <body>
+    <!-- HTML разметка страницы -->
+    <audio
+      id="buttonAudio"
+      src="https://cdn.uppbeat.io/audio-files/a34d50ecafdf61ec63b0f3d2f41f9998/41d954207b6d7d570e34029c81d81087/37a69fb3a73b85df0f01ec4281e14886/STREAMING-click-short-mouse-click-gamemaster-audio-1-00-00.mp3"
+    ></audio>
+    <div class="wrapper">
+      <div class="content">
+        <h1>
+          OpenClicker
+          <button id="soundButton"><i class="fas fa-volume-up"></i></button>
+        </h1>
+        <p class="status connecting" id="status-text">
+          Connecting to server...
+        </p>
+        <div id="tap-window">
+          <span id="balance"></span>
+        </div>
+        <div class="level">
+          <div class="card-profit">
+            Profit <span class="block card-profit-hour"></span> Per Hour
+          </div>
+          <div id="level-text">
+            <span>Level <em id="level-name"></em></span>
+            <span>Progress <em id="level-percent"></em></span>
+          </div>
+          <div class="progress-block">
+            <p id="level-progress" class="progress" style="width: 0"></p>
+          </div>
+          <div class="tap-info">
+            <span>Tap +<em id="amount-tap"></em></span>
+            <span
+              >Clicks To lvl Up <em class="block" id="amount-tap-next"></em
+            ></span>
+          </div>
+          <div class="energy">
+            <div class="battery">
+              <div class="battery-level warn" id="energy-power"></div>
+            </div>
+            <div class="energy-text">
+              <span id="energy-limit"></span>
+              <span>/</span>
+              <span id="energy-max"></span>
+            </div>
+          </div>
+          <div id="network">
+            <p>
+              Connection: &nbsp; <b id="status-network"></b>% &nbsp;
+              <b id="status-latency"></b>
+            </p>
+            <p>Server Time: &nbsp; <span id="server-time"></span></p>
+          </div>
+          <div id="tabs">
+            <div class="tab white-border">Free Boost</div>
+            <div class="tab">Premium Boost</div>
+            <div class="tabContent">
+              <div class="boost">
+                <button class="boost-button" id="restoreEnergyInstant">
+                  <span
+                    >❯ Instant energy: <b id="energy-instant-count"></b>/6
+                  </span>
+                  <span>Available: <b id="energy-instant-time"></b></span>
+                </button>
+              </div>
+              <div class="boost">
+                <button class="boost-button" id="activateTurbo">
+                  <span
+                    >❯ Turbo: <b id="activate-turbo-count"></b>/3
+                    <b id="activate-turbo-status" class="flash"></b
+                  ></span>
+                  <span>Available: <b id="activate-turbo-time"></b></span>
+                </button>
+              </div>
+            </div>
+            <div class="tabContent">
+              <div class="boost">
+                <div class="boost">
+                  <button class="boost-button" id="buyMultiTap">
+                    <span
+                      >❯ Upgrade MultiTap: +<b id="multi-tap-value">1</b> &nbsp;
+                      Your level: <b id="multi-tap-level"></b>
+                    </span>
+                    <span
+                      >Buy Next Level for
+                      <b id="multi-tap-price"></b> coins</span
+                    >
+                  </button>
+                </div>
+                <button class="boost-button" id="buyEnergyUpgrade">
+                  <span
+                    >❯ Max Energy: +<b id="energy-max-add"></b> &nbsp; Your
+                    level: <b id="energy-max-level"></b>
+                  </span>
+                  <span
+                    >Buy Next Level for
+                    <b id="energy-max-price"></b> coins</span
+                  >
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="tap-zone" id="click-button">
+            <div class="floating-text">
+              <span>Click Me</span>
+              <span>Tap Me</span>
+              <span>Touch Me</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="nav">
+        <ul>
+          <li><button type="button" id="getCardsInfo">Cards</button></li>
+          <li>
+            <button type="button" id="dailyRewardInfo">Daily Bonus</button>
+          </li>
+          <li><button type="button" id="openPartners">Friends</button></li>
+          <li><button type="button" id="tasks">Tasks</button></li>
+          <li>
+            <button type="button" id="helpLevels">
+              <i class="fas fa-info-circle" title="Info"></i>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- JS код клиентской части игры (сделан по фану, чтобы тестить бэк) -->
+    <script>
+      const isLocalhost = Boolean(window.location.hostname === "localhost");
+      const serverUrl = isLocalhost
+        ? "ws://localhost:2567"
+        : "wss://server.cryptosteron.com"; // Игровой сервер
+      const reconnectInterval = 5000; // Интервал для повторного подключения
+      const maxReconnectAttempts = 1000; // Максимальное количество попыток переподключения
+      let playerId; // ID игрока (для отображения реф URL)
+      let room = null; // Подключение к игровой комнате
+      let client = null; //  Websocket клиент
+      let reconnectAttempts = 0; // Счетчик попыток переподключения
+      let isClickListenerAdded = false; // Установлены ли обработчики кликов
+      let isConnecting = false; // Флаг для отслеживания процесса подключения
+      let tab; // Заголовок вкладки
+      let tabContent; // Блок содержащий контент вкладки
+      let stateSound = 1; // Состояние кнопки: 1 - звук включен, 0 - звук выключен
+
+      // DOM элементы
+      const buttonAudio = document.getElementById("buttonAudio");
+      const statusText = document.getElementById("status-text");
+      const clickButton = document.getElementById("click-button");
+      const progressBar = document.getElementById("level-progress");
+      const levelName = document.getElementById("level-name");
+      const levelPercent = document.getElementById("level-percent");
+      const energyLimit = document.getElementById("energy-limit");
+      const energyMax = document.getElementById("energy-max");
+      const energyLevelCharge = document.getElementById("energy-max-add");
+      const energyLevel = document.getElementById("energy-max-level");
+      const energyLevelPrice = document.getElementById("energy-max-price");
+      const helpLevels = document.getElementById("helpLevels");
+      const getTasks = document.getElementById("tasks");
+      const instantEnergy = document.getElementById("restoreEnergyInstant");
+      const activateTurbo = document.getElementById("activateTurbo");
+      const energyUpgrade = document.getElementById("buyEnergyUpgrade");
+      const multiTapUpgrade = document.getElementById("buyMultiTap");
+      const dailyRewardInfo = document.getElementById("dailyRewardInfo");
+      const getCardsInfo = document.getElementById("getCardsInfo");
+      const balanceWindow = document.getElementById("tap-window");
+      const battery = document.getElementById("energy-power");
+      const soundButton = document.getElementById("soundButton");
+      const rect = clickButton.getBoundingClientRect();
+
+      // Текстовые обозначения задач (для перевода в др. языки)
+      const taskNames = [
+        {
+          invite_friends_3: "Invite 3 friends",
+          invite_friends_10: "Invite 10 friends",
+          subscribe_channel: "Subscribe to Telegram channel",
+          deposit_10: "Make a deposit $10",
+          play_crash_10: "Play 10 rounds in Crash",
+        },
+      ];
+
+      // Статус соединения
+      const setStatus = (message, isConnected = false) => {
+        statusText.textContent = message;
+        statusText.classList.toggle("connected", isConnected);
+        statusText.classList.toggle("connecting", !isConnected);
+      };
+
+      // Управление кнопкой кликов
+      const setButtonState = (enabled) => {
+        clickButton.disabled = !enabled;
+      };
+
+      // Подключаемся к игровому серверу
+      const connectToServer = async () => {
+        let testUserID = null;
+        let tempSessionToken = null;
+        if (isLocalhost) {
+          const userId = new URLSearchParams(window.location.search).get(
+            "userId"
+          );
+          if (!userId) {
+            setStatus("UserId is not provided");
+            return;
+          }
+          testUserID = userId;
+        } else {
+          const tempSession = new URLSearchParams(window.location.search).get(
+            "token"
+          );
+          if (!tempSession) {
+            setStatus("Session token is not provided");
+            return;
+          }
+          tempSessionToken = tempSession;
+        }
+        if (isConnecting) return; // Предотвращаем повторное подключение, если уже происходит процесс подключения
+        if (reconnectAttempts >= maxReconnectAttempts) {
+          setStatus("Max reconnect attempts reached. Please try again later.");
+          return;
+        }
+
+        // Подключение уже было ранее..
+        if (room) {
+          try {
+            room.leave(); // Убедимся, что предыдущее соединение закрыто
+          } catch (error) {
+            console.error("Error while leaving room:", error);
+          }
+          room = null;
+        }
+
+        setStatus("Connecting to server...");
+        setButtonState(false);
+        isConnecting = true; // Устанавливаем флаг, что подключение в процессе
+
+        try {
+          // Формируем URL для авторизации
+          const loginUrl = isLocalhost
+            ? `/test?userId=${testUserID}` // Для тестов на локалке
+            : `/session?token=${tempSessionToken}`; // Для Telegram бота
+
+          // Получим токен для авторизации в игровой комнате
+          const response = await fetch(loginUrl);
+          const { token } = await response.json();
+          if (!token) {
+            throw new Error(
+              "The session is invalid or has expired. Please restart the game."
+            );
+          }
+
+          client = new Colyseus.Client(serverUrl);
+          room = await client.joinOrCreate("clicker", { token });
+
+          reconnectAttempts = 0; // Сброс счетчика при успешном подключении
+          setStatus("Connected", true);
+          setButtonState(true);
+
+          // Отобразим навигацию
+          document.getElementsByClassName("nav")[0].style.opacity = "1";
+
+          // Постоянно обновляет данные, в том случае когда произошли изменения в состоянии игровой комнаты
+          room.onStateChange(async (state) => {
+            // Основные данные
+            document.getElementById("balance").textContent =
+              state.balance.toLocaleString();
+            document.getElementById("amount-tap").textContent =
+              state.turboBoostStatus ? state.clickValue * 2 : state.clickValue;
+            document.getElementById("status-network").textContent =
+              state.connectionQuality;
+            document.getElementById("amount-tap-next").textContent =
+              state.clicksRemainingForNextLevel;
+            document.getElementById("status-latency").textContent =
+              state.latency > 0 ? `${state.latency} ms` : "";
+            balanceWindow.style.display = "flex";
+            if (state.connectionQuality > 0) {
+              document.getElementById("network").style.display = "block";
+            }
+            const balanceInModals = document.getElementById("balance-modal");
+            if (balanceInModals) {
+              balanceInModals.textContent = state.balance.toLocaleString();
+            }
+
+            // Прогресс уровня
+            const calculate =
+              ((state.totalClicks - state.previousLevelClicks) /
+                (state.nextLevelClicks - state.previousLevelClicks)) *
+              100;
+            const progress = state.nextLevelClicks > 0 ? calculate : 100;
+            progressBar.style.width = `${progress}%`;
+            levelName.textContent = state.levelName;
+            levelPercent.textContent = `${Math.round(progress)}%`;
+            document.getElementsByClassName("level")[0].style.display = "block";
+            if (state.nextLevelClicks <= 0) {
+              progressBar.style.background = "#ff0505";
+            }
+
+            // Считаем энергию
+            energyLimit.textContent = state.energy;
+            energyMax.textContent = state.energyMax;
+            energyLevel.textContent = state.energyMaxLevel;
+            energyLevelPrice.textContent = formatProfit(
+              state.energyUpgradeCost
+            );
+            energyLevelCharge.textContent = "500";
+            const energyPercent = (state.energy / state.energyMax) * 100;
+            battery.style.height = `${energyPercent}%`;
+            battery.classList.remove("warn", "alert");
+            if (energyPercent < 35) {
+              if (energyPercent <= 10) {
+                // Заряд батареи в красной зоне
+                battery.classList.add("alert");
+              } else {
+                // Низкий заряд батареи
+                battery.classList.add("warn");
+              }
+            }
+            document.getElementById("energy-instant-count").textContent =
+              state.energyRestoreRemaining;
+            document.getElementById("energy-instant-time").textContent =
+              state.nextEnergyRestoreTime === 0
+                ? "Yes"
+                : new Date(state.nextEnergyRestoreTime).toLocaleString();
+
+            // Турбо режим
+            document.getElementById("activate-turbo-count").textContent =
+              state.turboBoostsRemaining;
+            document.getElementById("activate-turbo-time").textContent =
+              state.nextTurboBoostTime === 0
+                ? "Yes"
+                : new Date(state.nextTurboBoostTime).toLocaleString();
+            document.getElementById("activate-turbo-status").textContent =
+              state.turboBoostStatus ? "Active" : "";
+
+            // Мультитап
+            document.getElementById("multi-tap-level").textContent =
+              state.multiTapLevel;
+            document.getElementById("multi-tap-price").textContent =
+              formatProfit(state.multiTapCost);
+
+            // Прибыль с карточек в час
+            document
+              .querySelectorAll(".card-profit-hour")
+              .forEach((element) => {
+                element.textContent = formatProfit(state.profitPerHour);
+              });
+
+            // Обновим карточки
+            if (document.querySelectorAll(".nav-menu-cards")[0]) {
+              const cardsContainer = document.getElementById("cards-container");
+              if (cardsContainer) {
+                // Отрисуем свежие карточек исли данные изменились
+                const hash = await generateHash(state.userCards);
+                if (hash !== cardsContainer.dataset.hash) {
+                  cardsContainer.dataset.hash = hash;
+                  renderCards(state.userCards, cardsContainer);
+                }
+              }
+            }
+          });
+
+          // Установим обработчики кликов
+          if (!isClickListenerAdded) {
+            // Определяем тип устройства и добавляем соответствующий обработчик событий на нажатие
+            if (isMobileDevice()) {
+              clickButton.addEventListener("touchstart", handleTouchStart); // Для мобильных устройств
+            } else {
+              clickButton.addEventListener("click", handleMouseClick); // Для ПК
+            }
+
+            // Нажимаем кнопку показать уровни
+            helpLevels.addEventListener("click", () => {
+              if (room) {
+                room.send("helpLevels");
+                if (stateSound) {
+                  buttonAudio.play().catch((error) => {
+                    console.log("Cant play button help sound", error);
+                  });
+                }
+              }
+            });
+
+            // Отобразим список заданий
+            getTasks.addEventListener("click", () => {
+              if (room) {
+                room.send("getTasks");
+              }
+            });
+
+            // Нажатие на восстановление энергии
+            instantEnergy.addEventListener("click", () => {
+              if (room) {
+                room.send("restoreEnergy");
+                if (stateSound) {
+                  buttonAudio.play().catch((error) => {
+                    console.log("Cant play button instant energy sound", error);
+                  });
+                }
+              }
+            });
+
+            // Клик на активацию турбо режима
+            activateTurbo.addEventListener("click", () => {
+              if (room) {
+                room.send("activateTurbo");
+                if (stateSound) {
+                  buttonAudio.play().catch((error) => {
+                    console.log("Cant play button activate turbo sound", error);
+                  });
+                }
+              }
+            });
+
+            // Клик по кнопке купить дополнительную энергию
+            energyUpgrade.addEventListener("click", () => {
+              if (room) {
+                room.send("buyEnergyUpgrade");
+                if (stateSound) {
+                  buttonAudio.play().catch((error) => {
+                    console.log("Cant play button energy upgrade sound", error);
+                  });
+                }
+              }
+            });
+
+            // Клик по кнопке купить уровень мультитап
+            multiTapUpgrade.addEventListener("click", () => {
+              if (room) {
+                room.send("buyMultiTap");
+                if (stateSound) {
+                  buttonAudio.play().catch((error) => {
+                    console.log(
+                      "Cant play button MultiTap upgrade sound",
+                      error
+                    );
+                  });
+                }
+              }
+            });
+
+            // Запрос информации об ежедневной награде
+            dailyRewardInfo.addEventListener("click", () => {
+              if (room) {
+                room.send("getDailyRewardInfo");
+                if (stateSound) {
+                  buttonAudio.play().catch((error) => {
+                    console.log(
+                      "Cant play button daily reward info sound",
+                      error
+                    );
+                  });
+                }
+              }
+            });
+
+            getCardsInfo.addEventListener("click", () => {
+              if (room) {
+                room.send("getCardsInfo");
+                if (stateSound) {
+                  buttonAudio.play().catch((error) => {
+                    console.log("Cant play button get cards info sound", error);
+                  });
+                }
+              }
+            });
+
+            // Клик для отображения партнерки
+            document
+              .getElementById("openPartners")
+              .addEventListener("click", () => {
+                if (room) {
+                  room.send("getFriendsList", { page: 1, pageSize: 20 });
+                }
+              });
+
+            isClickListenerAdded = true;
+          }
+
+          // Отображение списка друзей
+          room.onMessage("friendsList", (data) => {
+            if (data.status) {
+              if (data.reward) {
+                // Забрали награду за друга
+                document
+                  .getElementById(`ClaimReward_${data.reward.rewardId}`)
+                  .remove();
+                displayNotification(
+                  `Claimed ${formatProfit(
+                    data.reward.claim
+                  )} for invited friend`
+                );
+              }
+              // Отрисуем список друзей
+              // Постраничный вывод делаем на прод версии, система позволяет.
+              else displayFriendList(data);
+            } else {
+              // Отобразим ошибку
+              displayNotification(data.message);
+            }
+          });
+
+          // Обработчик турбо буста
+          room.onMessage("turboBoost", (data) => {
+            if (!data.success) {
+              displayNotification(data.message);
+            } else {
+              if (data.code === "Enable") {
+                // Включился турбо буст
+                activateTurbo.style.background = "#186861";
+              } else if (data.code === "Disable") {
+                // Выключился турбо буст
+                activateTurbo.style.background = "#1f1c264a";
+              } else {
+                console.log(data);
+              }
+            }
+          });
+
+          // Отрисуем список заданий
+          room.onMessage("taskList", (data) => {
+            if (data.status) {
+              // Отрисуем список
+              displayTaskList(data.tasks);
+            }
+          });
+
+          // Событие при проверке задания
+          room.onMessage("taskStatus", (data) => {
+            if (data.status) {
+              document.getElementById(`task_${data.reward.taskId}`).remove();
+              displayNotification(`You claimed ${data.reward.claim}`);
+            } else {
+              displayNotification(data.message);
+            }
+          });
+
+          // Обработчик пинг-понг
+          room.onMessage("ping", () => {
+            room.send("pong");
+          });
+
+          // Обработчик серверного времени
+          room.onMessage("serverTime", (data) => {
+            // ID игрока
+            playerId = data.playerId;
+            // Данные приходит когда тикает новая минута
+            document.getElementById("server-time").textContent =
+              data.server.date;
+          });
+
+          // Обработчик для отображения уровней игры
+          room.onMessage("levelsData", (levelsData) => {
+            // Показать уровни пользователю
+            renderLevels(levelsData);
+          });
+
+          // Обработчик для получения данных о мгновенной энергии
+          room.onMessage("restoreInstantEnergy", (data) => {
+            if (!data.success) {
+              displayNotification(data.message);
+            } else {
+              // Батарейка заряжена
+              console.log(data);
+            }
+          });
+
+          // Обработчик для получения данных о результате апгрейда энергии
+          room.onMessage("buyEnergyResult", (data) => {
+            if (!data.success) {
+              displayNotification(data.message);
+            } else {
+              // Емкость энегрии увеличена
+              console.log(data);
+            }
+          });
+
+          // Обработчик для информации о начислении с карточек
+          // За период когда юзер был оффлайн
+          room.onMessage("offlineCardProfit", (data) => {
+            if (data.profit > 0) {
+              setTimeout(() => {
+                showModalProfit(
+                  `<div style="padding:20px">Take your profit: ${formatProfit(
+                    data.profit
+                  )}</div>`
+                );
+              }, 100);
+            }
+            console.log(data);
+          });
+
+          // Обработчик отображение карточек
+          room.onMessage("cardsInfo", (data) => {
+            showModalCards(data.menu, data.cards);
+            console.log(data);
+          });
+
+          // Обработчик отображение информации о покупке карты
+          room.onMessage("profitCardsBuyStatus", (data) => {
+            displayNotification(data.message);
+            console.log(data);
+          });
+
+          // Информация после того как забрали прибыль с карточек по кнопке
+          room.onMessage("profitCardsCollectStatus", (data) => {
+            if (data.status) {
+              if (stateSound) {
+                buttonAudio.play().catch((error) => {
+                  console.log("Cant play button collete profit", error);
+                });
+              }
+              closeModalProfit();
+            } else {
+              displayNotification(data.message);
+            }
+            console.log(data);
+          });
+
+          // Обработчик данных об статусе ежедневных наградах
+          room.onMessage("dailyRewardInfo", (data) => {
+            showModalRewards(data.availableRewards);
+          });
+
+          // Обработчик для запроса ежедневной награды
+          room.onMessage("rewardClaim", (data) => {
+            if (data.success) {
+              document.querySelectorAll(".modal").forEach((el) => el.remove());
+              showModalRewards(data.availableRewards);
+              displayNotification(data.message);
+            } else {
+              displayNotification(data.message);
+            }
+          });
+
+          // Обработчик для получения данных о результате апгрейда мультитапа
+          room.onMessage("buyMultiTapResult", (data) => {
+            if (!data.success) {
+              displayNotification(data.message);
+            } else {
+              // Уровень мультитапа увеличен
+              console.log(data);
+            }
+          });
+
+          // Обработчик тапов
+          room.onMessage("clickValue", (data) => {
+            const value = Number(data.value);
+            const plusOne = document.createElement("div");
+            plusOne.classList.add("plus");
+            plusOne.textContent = value > 0 ? `+${value}` : value;
+            plusOne.style.left = `${data.left}px`;
+            plusOne.style.top = `${data.top}px`;
+            if (value === 0) {
+              plusOne.style.marginLeft = "-7px";
+            }
+            clickButton.parentElement.appendChild(plusOne);
+            setTimeout(() => {
+              plusOne.remove();
+            }, 2000);
+
+            // Включаем звук если капнуло на баланс
+            if (stateSound && value > 0) {
+              buttonAudio.pause(); // Останавливаем текущий звук
+              buttonAudio.currentTime = 0; // Перемещаем указатель воспроизведения на начало
+              buttonAudio.play().catch((error) => {
+                console.log("Cant play button click sound", error);
+              });
+            }
+          });
+
+          // Игрок покинул комнату
+          room.onLeave(() => {
+            handleDisconnection("Connection lost. Reconnecting...");
+          });
+
+          // Ошибка подключения
+          room.onError((code, message) => {
+            handleDisconnection("Connection error. Reconnecting...");
+          });
+
+          isConnecting = false; // Сбрасываем флаг после успешного подключения
+        } catch (error) {
+          console.error("Connection error:", error);
+          handleDisconnection(`${error.message} Reconnecting...`);
+        }
+      };
+
+      // Определяем мобильное устройство
+      const isMobileDevice = () => {
+        return isTouchDevice() && isMobileByUserAgent();
+      };
+
+      // Простая проверка на девайс с тачем
+      const isTouchDevice = () =>
+        "ontouchstart" in window || navigator.maxTouchPoints > 0;
+
+      // Простая проверка на мобильный UserAgent
+      const isMobileByUserAgent = () =>
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        );
+
+      // Функция для обработки касаний (в том числе мультитач)
+      const handleTouchStart = (event) => {
+        event.preventDefault(); // Предотвращаем стандартные действия (например, скролл на мобильных)
+        // Проходим по всем точкам касания (для примера сойдёт)
+        const limit = 2;
+        if (event.touches.length <= limit) {
+          for (let i = 0; i < event.touches.length; i++) {
+            const touch = event.touches[i];
+            const x = touch.pageX;
+            const y = touch.pageY;
+
+            // Отправим клик с координатами где отобразить текст +N
+            if (room) {
+              room.send("click", {
+                left: `${x - rect.left}`,
+                top: `${y - rect.top}`,
+              });
+            }
+          }
+        }
+      };
+
+      // Функция для обработки событий кликов мыши
+      const handleMouseClick = (event) => {
+        const x = event.pageX;
+        const y = event.pageY;
+
+        // Отправим клик с координатами где отобразить текст +N
+        if (room) {
+          room.send("click", {
+            left: `${x - rect.left}`,
+            top: `${y - rect.top}`,
+          });
+        }
+      };
+
+      // Обработка отключения от сервера
+      const handleDisconnection = (message) => {
+        document.getElementById("status-network").textContent = "0";
+        document.getElementById("status-latency").textContent = "";
+        setStatus(message);
+        setButtonState(false);
+        reconnectAttempts++;
+        isConnecting = false; // Сбрасываем флаг при ошибке или разрыве соединения
+        console.log(`Reconnect attempt ${reconnectAttempts}`);
+        if (reconnectAttempts < maxReconnectAttempts) {
+          console.log(
+            `Attempt ${reconnectAttempts} to reconnect in ${reconnectInterval}ms`
+          );
+          setTimeout(async () => {
+            try {
+              await connectToServer();
+            } catch (error) {
+              console.error("Reconnect failed:", error);
+            }
+          }, reconnectInterval);
+        } else {
+          console.log(
+            "Max reconnect attempts reached. No more reconnection attempts."
+          );
+        }
+      };
+
+      // Рисуем таблицу уровней
+      const renderLevels = (data) => {
+        const levelsData = data.levels;
+        // Создаем модальное окно
+        const modal = document.createElement("div");
+        modal.id = "levelsModal";
+        modal.style.position = "fixed";
+        modal.style.top = "0";
+        modal.style.left = "0";
+        modal.style.width = "100%";
+        modal.style.height = "100%";
+        modal.style.backgroundColor = "rgba(0, 0, 0, 0.9)";
+        modal.style.color = "white";
+        modal.style.zIndex = "1000";
+        modal.style.display = "flex";
+        modal.style.flexDirection = "column";
+        modal.style.alignItems = "center";
+        modal.style.justifyContent = "center";
+
+        // Создаем заголовок модального окна
+        const modalHeader = document.createElement("h1");
+        modalHeader.textContent = "Levels";
+        modalHeader.style.margin = "0";
+        modalHeader.style.position = "absolute";
+        modalHeader.style.top = "0";
+        modalHeader.style.padding = "10px";
+        modalHeader.style.fontSize = "20px";
+        modalHeader.style.fontWeight = "bold";
+        modalHeader.style.textAlign = "center";
+        modalHeader.style.backgroundColor = "rgb(0, 0, 0)";
+        modalHeader.style.width = "100%";
+        modalHeader.style.color = "#c4a3b4";
+        modalHeader.style.borderBottom = "1px solid rgb(26, 26, 26)";
+
+        // Создаем контейнер для уровней
+        const levelsContainer = document.createElement("div");
+        levelsContainer.style.maxWidth = "90%";
+        levelsContainer.style.maxHeight = "80%";
+        levelsContainer.style.overflowY = "auto";
+        levelsContainer.style.padding = "10px";
+        levelsContainer.style.backgroundColor = "black";
+        levelsContainer.style.borderRadius = "10px";
+        levelsContainer.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.5)";
+
+        // Создаем таблицу уровней
+        const table = document.createElement("table");
+        table.style.width = "100%";
+        table.style.borderCollapse = "collapse";
+        table.style.color = "white";
+
+        // Создаем заголовок таблицы
+        const thead = document.createElement("thead");
+        const headerRow = document.createElement("tr");
+        ["Level", "Name", "Taps", "To Up"].forEach((text) => {
+          const th = document.createElement("th");
+          th.textContent = text;
+          th.style.padding = "5px";
+          th.style.borderBottom = "1px solid #222";
+          th.style.textAlign = "center";
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        // Создаем тело таблицы
+        const tbody = document.createElement("tbody");
+        levelsData.forEach((level) => {
+          const row = document.createElement("tr");
+          ["level", "name", "tap", "min"].forEach((key) => {
+            const td = document.createElement("td");
+            td.textContent = key === "tap" ? `+${level[key]}` : level[key];
+            td.style.padding = "5px";
+            td.style.borderBottom = "1px solid #222";
+            // Если текущий уровень совпадает с уровнем из таблицы, изменяем цвет текста
+            if (level.level === data.current) {
+              td.style.color = "rgb(255, 161, 197)"; // Устанавливаем цвет текста
+              td.style.background = "#c12db1"; // Устанавливаем цвет фона
+            }
+            row.appendChild(td);
+          });
+          tbody.appendChild(row);
+        });
+        table.appendChild(tbody);
+
+        // Добавляем таблицу в контейнер для уровней
+        levelsContainer.appendChild(table);
+
+        // Создаем кнопку для закрытия модального окна
+        const closeButton = document.createElement("button");
+        closeButton.textContent = "OK";
+        closeButton.style.marginTop = "10px";
+        closeButton.style.padding = "5px 15px";
+        closeButton.style.fontSize = "18px";
+        closeButton.style.fontFamily = '"New Amsterdam", sans-serif';
+        closeButton.style.cursor = "pointer";
+        closeButton.style.backgroundColor = "rgb(60, 56, 56)";
+        closeButton.style.color = "white";
+        closeButton.style.border = "none";
+        closeButton.style.borderRadius = "5px";
+        closeButton.addEventListener("click", () => {
+          document.body.removeChild(modal);
+          document.body.classList.remove("no-scroll"); // Разблокируем скрол
+        });
+
+        // Добавляем заголовок и контейнер в модальное окно
+        modal.appendChild(modalHeader);
+        modal.appendChild(levelsContainer);
+        modal.appendChild(closeButton);
+
+        // Добавляем модальное окно в тело документа
+        document.body.appendChild(modal);
+
+        // После добавления в DOM заблокируем скрол на странице
+        document.body.classList.add("no-scroll");
+      };
+
+      // Отображение оповещения
+      const displayNotification = (message) => {
+        // Создаем модальное окно
+        const modal = document.createElement("div");
+        modal.id = "notificationModal";
+        modal.style.position = "fixed";
+        modal.style.top = "0";
+        modal.style.left = "0";
+        modal.style.width = "100%";
+        modal.style.height = "100%";
+        modal.style.backgroundColor = "rgba(0, 0, 0, 0.9)";
+        modal.style.color = "white";
+        modal.style.zIndex = "1000";
+        modal.style.display = "flex";
+        modal.style.flexDirection = "column";
+        modal.style.alignItems = "center";
+        modal.style.justifyContent = "center";
+
+        // Создаем заголовок модального окна
+        const modalHeader = document.createElement("h1");
+        modalHeader.textContent = "Notification";
+        modalHeader.style.margin = "0";
+        modalHeader.style.position = "absolute";
+        modalHeader.style.top = "0";
+        modalHeader.style.padding = "10px";
+        modalHeader.style.fontSize = "20px";
+        modalHeader.style.fontWeight = "bold";
+        modalHeader.style.textAlign = "center";
+        modalHeader.style.backgroundColor = "rgb(0, 0, 0)";
+        modalHeader.style.width = "100%";
+        modalHeader.style.color = "rgba(255, 37, 37, 0.8)";
+        modalHeader.style.borderBottom = "1px solid rgb(26, 26, 26)";
+
+        // Создаем контейнер для контента
+        const notifyContainer = document.createElement("div");
+        notifyContainer.textContent = message;
+        notifyContainer.style.color = "white";
+        notifyContainer.style.backgroundColor = "rgba(0, 0, 0, 0.95)";
+        notifyContainer.style.padding = "50px 20px";
+        notifyContainer.style.borderRadius = "10px";
+
+        // Создаем кнопку для закрытия модального окна
+        const closeButton = document.createElement("button");
+        closeButton.textContent = "OK";
+        closeButton.style.fontFamily = '"New Amsterdam", sans-serif';
+        closeButton.style.marginTop = "10px";
+        closeButton.style.padding = "5px 15px";
+        closeButton.style.fontSize = "18px";
+        closeButton.style.cursor = "pointer";
+        closeButton.style.backgroundColor = "rgb(60, 56, 56)";
+        closeButton.style.color = "white";
+        closeButton.style.border = "none";
+        closeButton.style.borderRadius = "5px";
+        closeButton.addEventListener("click", () => {
+          document.body.removeChild(modal);
+        });
+
+        // Добавляем заголовок и контейнер в модальное окно
+        modal.appendChild(modalHeader);
+        modal.appendChild(notifyContainer);
+        modal.appendChild(closeButton);
+
+        // Добавляем модальное окно в тело документа
+        document.body.appendChild(modal);
+      };
+
+      // Покажем ежедневные награды
+      const showModalRewards = (rewards) => {
+        // Создаем элементы модального окна
+        const modal = document.createElement("div");
+        modal.classList.add("modal");
+
+        const modalContent = document.createElement("div");
+        modalContent.classList.add("modal-content");
+
+        const rewardList = document.createElement("div");
+        rewardList.classList.add("reward-list");
+
+        // Заполняем список элементами наград
+        rewards.forEach((reward) => {
+          const rewardItem = document.createElement("div");
+          rewardItem.classList.add("reward-item");
+
+          if (reward.isCollected) {
+            rewardItem.classList.add("reward-active");
+          }
+
+          const isCollected = reward.isCollected ? "Received" : "Not Available";
+          const isAvailable = reward.isAvailable ? "Available" : isCollected;
+
+          const classCollected = reward.isCollected ? "" : "not";
+          const classAvailable = reward.isAvailable ? "yes" : classCollected;
+
+          rewardItem.innerHTML = `
+        <strong>Day ${reward.day}</strong>
+        <p>Reward: ${reward.reward}</p>
+        <p class="reward-label ${classAvailable}">${isAvailable}</p>
+      `;
+          rewardList.appendChild(rewardItem);
+        });
+
+        const buttonContainer = document.createElement("div");
+        buttonContainer.classList.add("button-container");
+
+        const closeButton = document.createElement("button");
+        closeButton.classList.add("btn", "btn-close");
+        closeButton.innerHTML = "&#8592; Go Back";
+        closeButton.onclick = () => {
+          document.body.removeChild(modal);
+          document.body.classList.remove("no-scroll"); // Разблокируем скролл
+        };
+
+        const actionButton = document.createElement("button");
+        actionButton.classList.add("btn", "btn-action");
+        actionButton.textContent = "Get Reward";
+        actionButton.onclick = () => {
+          // Получаем ежедневную награду
+          if (room) {
+            room.send("claimDailyReward");
+            if (stateSound) {
+              buttonAudio.play().catch((error) => {
+                console.log("Cant play button claim daily reward sound", error);
+              });
+            }
+          }
+        };
+
+        buttonContainer.appendChild(closeButton);
+        buttonContainer.appendChild(actionButton);
+
+        modalContent.appendChild(rewardList);
+        modalContent.appendChild(buttonContainer);
+        modal.appendChild(modalContent);
+
+        // Добавляем модальное окно в DOM
+        document.body.appendChild(modal);
+
+        // После добавления в DOM заблокируем скрол на странице
+        document.body.classList.add("no-scroll");
+      };
+
+      // Функция для отображения модального окна с карточками
+      const showModalCards = async (menuData, cardsData) => {
+        // Получим прибыль и баланс из DOM дерева, чтобы не запрашивать
+        const profit =
+          document.querySelectorAll(".card-profit-hour")[0].textContent;
+        const balance = document.getElementById("balance").textContent;
+
+        // Создание элементов модального окна
+        const modal = document.createElement("div");
+        modal.id = "modal";
+        modal.className = "modal";
+
+        const modalContent = document.createElement("div");
+        modalContent.className = "modal-content fullscreen-scrollable";
+
+        const navMenu = document.createElement("div");
+        navMenu.className = "nav-menu-cards";
+
+        // Создание кнопок навигации
+        let index = 0;
+        menuData.forEach((obj) => {
+          const navButton = document.createElement("button");
+          navButton.textContent = obj.name;
+          navButton.className = "card-button card-item";
+          navButton.className =
+            index > 0
+              ? "card-button card-item"
+              : "card-button card-item active";
+          navButton.dataset.type = obj.id;
+          navButton.onclick = function () {
+            document.querySelectorAll(".card-item").forEach((nav) => {
+              nav.classList.remove("active");
+              const blockCards = document.getElementById("cards-container");
+              if (blockCards) {
+                blockCards.dataset.filter = obj.id;
+                renderCards(cardsData, blockCards);
+              }
+            });
+            this.classList.add("active");
+          };
+          index += 1;
+          navMenu.appendChild(navButton);
+        });
+
+        const hash = await generateHash(cardsData);
+
+        const cardsContainer = document.createElement("div");
+        cardsContainer.id = "cards-container";
+
+        // Установим хеш и фильтр для обновления
+        cardsContainer.dataset.hash = hash;
+        if (!cardsContainer.dataset.filter) {
+          cardsContainer.dataset.filter = "1";
+        }
+
+        const buttonContainer = document.createElement("div");
+        buttonContainer.classList.add("button-container");
+
+        const closeButton = document.createElement("button");
+        closeButton.classList.add("btn", "btn-close");
+        closeButton.innerHTML = "&#8592; Go Back";
+        closeButton.style.marginRight = "10px";
+        closeButton.onclick = () => {
+          document.body.removeChild(modal);
+          document.body.classList.remove("no-scroll"); // Разблокируем скролл
+        };
+
+        const profitBlock = document.createElement("div");
+        profitBlock.classList.add("btn");
+        profitBlock.style.color = "#ccc";
+        profitBlock.style.cursor = "default";
+        profitBlock.style.padding = "0";
+
+        // При обновлении состояния автоматически, прибыль в час будет актуальная
+        profitBlock.innerHTML = `
+      <span class="profit-buttons">Balance: <span id="balance-modal">${balance}</span></span>
+      <span class="profit-buttons">Profit: <span class="card-profit-hour">${profit}</span> / Hour</span>
+    `;
+
+        // Вставляем все элементы в модальное окно
+        buttonContainer.appendChild(closeButton);
+        buttonContainer.appendChild(profitBlock);
+        modalContent.appendChild(navMenu);
+        modalContent.appendChild(cardsContainer);
+        modalContent.appendChild(buttonContainer);
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+
+        // Генерация карточек
+        renderCards(cardsData, cardsContainer);
+
+        // После добавления в DOM заблокируем скрол на странице
+        document.body.classList.add("no-scroll");
+      };
+
+      // Функция для отрисовки карточек в контейнере
+      const renderCards = (data, container) => {
+        const blockCards = document.getElementById("cards-container");
+        const filterId = blockCards ? Number(blockCards.dataset.filter) : 1;
+        container.innerHTML = ""; // Очищаем контейнер перед добавлением новых карточек
+        let addCards = 0;
+        data.forEach((card) => {
+          const cardBlock = document.createElement("div");
+          cardBlock.className = "card-button";
+          if (!card.unlocked) {
+            cardBlock.style.opacity = "0.5";
+
+            // Добавим иформацию что карточка зависит от другой карточки
+            if (card.dependencyCardId && card.dependencyCardLevel) {
+              // Уровень карточки
+              const dependencyCard = document.createElement("div");
+              dependencyCard.textContent = `Need to unlock Card_ID ${card.dependencyCardId} to level [ ${card.dependencyCardLevel} ]`;
+              dependencyCard.classList.add("card-notice");
+              // Добавляем элемент в блок карточки
+              cardBlock.appendChild(dependencyCard);
+            }
+
+            // Добавим иформацию что карточка зависит от уровня игрока
+            if (card.requiredLevel) {
+              // Уровень игрока
+              const requiredLevel = document.createElement("div");
+              requiredLevel.textContent = `You need to reach account level [ ${card.requiredLevel} ]`;
+              requiredLevel.classList.add("card-notice");
+              // Добавляем элемент в блок карточки
+              cardBlock.appendChild(requiredLevel);
+            }
+
+            // Добавим иформацию что карточка отключена
+            if (card.status === 0) {
+              // Выключена
+              const cardStatus = document.createElement("div");
+              cardStatus.textContent = `This card is temporary disabled`;
+              cardStatus.classList.add("card-notice");
+              // Добавляем элемент в блок карточки
+              cardBlock.appendChild(cardStatus);
+            }
+          }
+
+          // Название карточки
+          const nameSpan = document.createElement("p");
+          nameSpan.textContent = card.name.trim();
+
+          // Уровень карточки
+          const levelSpan = document.createElement("p");
+          levelSpan.textContent = `CARD № ${card.id} Level: ${card.level}`;
+
+          // Прибыль за следующий уровень
+          const profitSpan = document.createElement("span");
+          profitSpan.textContent = ` Profit: ${formatProfit(card.nextProfit)} `;
+
+          // Цена за следующий уровень
+          const priceSpan = document.createElement("span");
+          priceSpan.textContent = ` Price: ${formatProfit(card.nextPrice)} `;
+
+          // Кнопка купить карточку
+          const buyButton = document.createElement("button");
+          buyButton.textContent = `Buy`;
+          buyButton.disabled = !card.unlocked;
+          buyButton.onclick = () => {
+            room.send("buyCard", { cardId: card.id });
+            if (stateSound) {
+              buttonAudio.play().catch((error) => {
+                console.log("Cant play button BUY CARD", error);
+              });
+            }
+          };
+
+          // Добавляем все элементы в блок карточки
+          cardBlock.appendChild(nameSpan);
+          cardBlock.appendChild(levelSpan);
+          cardBlock.appendChild(profitSpan);
+          cardBlock.appendChild(priceSpan);
+          cardBlock.appendChild(buyButton);
+
+          // Добавляем блок в контейнер
+          if (filterId === card.cardType) {
+            container.appendChild(cardBlock);
+            addCards += 1;
+          }
+        });
+
+        if (addCards === 0) {
+          container.innerHTML = "<h3>No cards of this type found</h3>";
+        }
+      };
+
+      // Модальное окно чтобы забрать прибыль с карточек
+      const showModalProfit = (content, hideBtn = false) => {
+        // Создаем модальное окно
+        const modal = document.createElement("div");
+        const overlay = document.createElement("div");
+
+        // Стили для overlay (затемненный фон)
+        overlay.style.position = "fixed";
+        overlay.style.top = "0";
+        overlay.style.left = "0";
+        overlay.style.width = "100%";
+        overlay.style.height = "100%";
+        overlay.style.backgroundColor = "rgba(0, 0, 0, 0.9)";
+        overlay.style.display = "flex";
+        overlay.style.justifyContent = "center";
+        overlay.style.alignItems = "flex-end"; // Расположение модального окна внизу
+        overlay.style.transition = "opacity 0.3s ease";
+        overlay.style.opacity = "0";
+        overlay.style.zIndex = "5";
+        overlay.id = "overlay";
+
+        // Стили для модального окна
+        modal.style.position = "fixed";
+        modal.style.bottom = "-25%"; // Начальное положение за пределами видимости
+        modal.style.width = "100%";
+        modal.style.color = "#fff";
+        modal.style.height = "25%"; // 25% экрана
+        modal.style.background =
+          "linear-gradient(116deg,#4c1f6a,rgb(24, 15, 30) 16.14%,rgb(44, 16, 60) 52.16%,rgb(24, 15, 30) 82.51%,#2f0833)";
+        modal.style.borderTopLeftRadius = "10px";
+        modal.style.borderTopRightRadius = "10px";
+        modal.style.boxShadow = "0 -2px 10px rgba(0, 0, 0, 0.2)";
+        modal.style.transition = "bottom 0.4s ease"; // Плавное выдвижение
+        modal.style.borderTop = "1px solid #a06bcc";
+        modal.id = "modal";
+
+        // Добавляем переданный контент в модальное окно
+        modal.innerHTML = content;
+
+        if (!hideBtn) {
+          // Кнопка закрыть
+          const button = document.createElement("button");
+          button.textContent = `Collect Profit`;
+          button.classList.add("card-button");
+          button.style.padding = "5px 20px";
+          button.style.fontSize = "20px";
+          button.style.cursor = "pointer";
+          button.style.backgroundColor = "#8a27cc";
+          button.onclick = () => {
+            room.send("collectCardsProfit");
+          };
+
+          modal.appendChild(button);
+        }
+
+        // Добавляем модальное окно в overlay
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        // Плавное отображение overlay
+        setTimeout(() => {
+          overlay.style.opacity = "1";
+        }, 10);
+
+        // Плавное выдвижение модального окна
+        setTimeout(() => {
+          modal.style.bottom = "0";
+        }, 10);
+      };
+
+      const displayTaskList = (tasks) => {
+        showModalTasks(tasks);
+        if (stateSound) {
+          buttonAudio.play().catch((error) => {
+            console.log("Cant play button task list info sound", error);
+          });
+        }
+      };
+
+      const displayFriendList = (data) => {
+        const inviteUrl = `https://t.me/OpenClickerCashBot?start=startapp_${playerId}`;
+        showModalUsers(
+          data.list.friends,
+          `
+            <div class="ref">
+              <p class="ref-label">Click to copy your invite <button class="copy-btn" onclick="closeModalProfit(true)">X</button></p>
+              <a class="ref-link" href="javascript:copyToClipboard('${inviteUrl}')">Copy to clipboard</a>
+            </div>`,
+          true
+        );
+        if (stateSound) {
+          buttonAudio.play().catch((error) => {
+            console.log("Cant play button get partner info sound", error);
+          });
+        }
+      };
+
+      // Функция закрытия модального окна
+      const closeModalProfit = (typeFriends = false) => {
+        const modal = document.getElementById("modal");
+        if (typeFriends) {
+          document.body.removeChild(modal);
+          document.body.classList.remove("no-scroll");
+        } else {
+          const overlay = document.getElementById("overlay");
+          modal.style.bottom = "-50%"; // Прячем окно вниз
+          overlay.style.opacity = "0"; // Плавное исчезновение overlay
+          setTimeout(() => {
+            document.body.removeChild(overlay); // Удаляем overlay и модальное окно из DOM
+          }, 400);
+        }
+      };
+
+      // Скрыть контент в табе
+      const hideTabsContent = (a) => {
+        for (let i = a; i < tabContent.length; i++) {
+          tabContent[i].classList.remove("show");
+          tabContent[i].classList.add("hide");
+          tab[i].classList.remove("white-border");
+        }
+      };
+
+      // Отобразить контент в табе
+      const showTabsContent = (b) => {
+        if (tabContent[b].classList.contains("hide")) {
+          hideTabsContent(0);
+          tab[b].classList.add("white-border");
+          tabContent[b].classList.remove("hide");
+          tabContent[b].classList.add("show");
+        }
+      };
+
+      // Форматирование прибыли
+      const formatProfit = (number) => {
+        if (number >= 1_000_000_000) {
+          return (number / 1_000_000_000).toFixed(1) + "B"; // миллиард
+        } else if (number >= 1_000_000) {
+          return (number / 1_000_000).toFixed(1) + "M"; // миллион
+        } else if (number >= 1_000) {
+          return (number / 1_000).toFixed(1) + "K"; // тысяча
+        } else {
+          return number.toString(); // меньше тысячи
+        }
+      };
+
+      // Создаем хеш обьекта для идентификации
+      const generateHash = async (object) => {
+        // Преобразуем объект в JSON-строку
+        const jsonString = JSON.stringify(object);
+
+        // Кодируем строку в формат Uint8Array
+        const encoder = new TextEncoder();
+        const data = encoder.encode(jsonString);
+
+        // Вычисляем хеш используя алгоритм SHA-256
+        const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+
+        // Преобразуем хеш в шестнадцатеричную строку
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+
+        return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+      };
+
+      // Копируем партнерскую ссылку и закрываем окно
+      const copyToClipboard = (text) => {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard
+            .writeText(text)
+            .then(() => {
+              closeModalProfit(true);
+              displayNotification("Copied to the clipboard");
+            })
+            .catch((err) => {
+              closeModalProfit(true);
+              displayNotification("Error: ", err);
+            });
+        }
+      };
+
+      // Клик по табам
+      document.getElementById("tabs").onclick = function (event) {
+        const target = event.target;
+        if (target.className === "tab") {
+          for (let i = 0; i < tab.length; i++) {
+            if (target === tab[i]) {
+              showTabsContent(i);
+              break;
+            }
+          }
+        }
+      };
+
+      // Переключатель звука
+      soundButton.addEventListener("click", function () {
+        const icon = this.querySelector("i");
+        stateSound = stateSound === 1 ? 0 : 1; // Переключаем состояние между 1 и 0
+        if (stateSound === 1) {
+          icon.className = "fas fa-volume-up"; // Иконка звука включена
+          this.classList.remove("sound-off");
+          this.classList.add("sound-on");
+        } else {
+          icon.className = "fas fa-volume-mute"; // Иконка звука выключена
+          this.classList.remove("sound-on");
+          this.classList.add("sound-off");
+        }
+      });
+
+      // Страница загружена, действуем
+      window.onload = function () {
+        // Расширение мини-приложения на полную высоту экрана
+        Telegram.WebApp.expand();
+
+        // Интерфейс приложения
+        const sound = document.getElementById("soundButton");
+        tabContent = document.getElementsByClassName("tabContent");
+        tab = document.getElementsByClassName("tab");
+        sound.style.display = "initial";
+        hideTabsContent(1);
+        setTimeout(connectToServer, 1000);
+        setTimeout(() => {
+          sound.style.opacity = "1";
+        }, 5000);
+
+        // Можно проверить состояние WebApp
+        console.log(Telegram.WebApp.initData);
+      };
+
+      // Функция для отображения модального окна с приглашенными друзьями
+      const showModalUsers = async (friends, content) => {
+        // Создание элементов модального окна
+        const modal = document.createElement("div");
+        modal.id = "modal";
+        modal.className = "modal";
+
+        const modalContent = document.createElement("div");
+        modalContent.className = "modal-content fullscreen-scrollable";
+
+        const userContainer = document.createElement("div");
+        userContainer.innerHTML = content;
+
+        const friendsContainer = document.createElement("div");
+        friendsContainer.id = "cards-container";
+
+        const buttonContainer = document.createElement("div");
+        buttonContainer.classList.add("button-container");
+
+        const closeButton = document.createElement("button");
+        closeButton.classList.add("btn", "btn-close");
+        closeButton.innerHTML = "&#8592; Go Back";
+        closeButton.style.marginRight = "10px";
+        closeButton.onclick = () => {
+          document.body.removeChild(modal);
+          document.body.classList.remove("no-scroll"); // Разблокируем скролл
+        };
+
+        // Вставляем все элементы в модальное окно
+        buttonContainer.appendChild(closeButton);
+        modalContent.appendChild(userContainer);
+        modalContent.appendChild(friendsContainer);
+        modalContent.appendChild(buttonContainer);
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+
+        // Генерация списка друзей
+        renderFriends(friends, friendsContainer);
+
+        // После добавления в DOM заблокируем скрол на странице
+        document.body.classList.add("no-scroll");
+      };
+
+      // Модальное окно с заданиями
+      const showModalTasks = (tasks) => {
+        // Создание элементов модального окна
+        const modal = document.createElement("div");
+        modal.id = "modal";
+        modal.className = "modal";
+
+        const modalContent = document.createElement("div");
+        modalContent.className = "modal-content fullscreen-scrollable";
+
+        const taskContainer = document.createElement("div");
+        taskContainer.id = "task-container";
+
+        const buttonContainer = document.createElement("div");
+        buttonContainer.classList.add("button-container");
+
+        const closeButton = document.createElement("button");
+        closeButton.classList.add("btn", "btn-close");
+        closeButton.innerHTML = "&#8592; Go Back";
+        closeButton.style.marginRight = "10px";
+        closeButton.onclick = () => {
+          document.body.removeChild(modal);
+          document.body.classList.remove("no-scroll"); // Разблокируем скролл
+        };
+
+        // Вставляем все элементы в модальное окно
+        buttonContainer.appendChild(closeButton);
+        modalContent.appendChild(taskContainer);
+        modalContent.appendChild(buttonContainer);
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+
+        // Генерация списка заданий
+        renderTasks(tasks, taskContainer);
+
+        // После добавления в DOM заблокируем скрол на странице
+        document.body.classList.add("no-scroll");
+      };
+
+      // Отображение списка заданий в контейнере
+      const renderTasks = (data, container) => {
+        console.log(data);
+        container.innerHTML = ""; // Очищаем контейнер перед добавлением заданий
+        const header = document.createElement("h2");
+        header.textContent = "Task list";
+        container.appendChild(header);
+        data.forEach((task) => {
+          const taskBlock = document.createElement("div");
+          taskBlock.className = task.finished
+            ? "task-item finished"
+            : "task-item";
+
+          // Название задания
+          const nameSpan = document.createElement("p");
+          nameSpan.classList.add("task-name");
+          nameSpan.textContent = taskNames[0][task.task];
+
+          // Награда
+          const rewardSpan = document.createElement("p");
+          rewardSpan.classList.add("task-reward");
+          rewardSpan.textContent = task.reward;
+
+          // Добавим в блок
+          taskBlock.appendChild(nameSpan);
+          taskBlock.appendChild(rewardSpan);
+
+          // Задача с подпиской
+          if (task.url) {
+            // Отображаем кнопку подписаться
+            if (task.status === "active") {
+              const subLink = document.createElement("a");
+              subLink.classList.add("task-button");
+              subLink.textContent = `Subscribe`;
+              subLink.href = task.url;
+              subLink.target = "_blank";
+              subLink.onclick = function () {
+                document.getElementById(`task_${task.id}`).style.display =
+                  "block";
+                this.remove();
+              };
+              taskBlock.appendChild(subLink);
+            }
+
+            // Отобразим кнопку забрать награду
+            if (task.status === "active" || task.status === "claim") {
+              const claimBtn = document.createElement("button");
+              if (task.status === "active") {
+                claimBtn.style.display = "none";
+              }
+              claimBtn.id = `task_${task.id}`;
+              claimBtn.classList.add("task-button");
+              claimBtn.textContent = `Claim Reward`;
+              claimBtn.onclick = function () {
+                room.send("getTaskReward", { taskId: task.id });
+                if (stateSound) {
+                  buttonAudio.play().catch((error) => {
+                    console.log("Cant play button get task reward", error);
+                  });
+                }
+              };
+              taskBlock.appendChild(claimBtn);
+            }
+          } else {
+            // Отобразим кнопку проверки и зачисления бонуса
+            if (task.status !== "completed") {
+              const checkBtn = document.createElement("button");
+              checkBtn.id = `task_${task.id}`;
+              checkBtn.classList.add("task-button");
+              checkBtn.textContent = `Claim Reward`;
+              checkBtn.onclick = function () {
+                room.send("getTaskReward", { taskId: task.id });
+                if (stateSound) {
+                  buttonAudio.play().catch((error) => {
+                    console.log("Cant play button get task reward", error);
+                  });
+                }
+              };
+              taskBlock.appendChild(checkBtn);
+            }
+          }
+
+          container.appendChild(taskBlock);
+        });
+      };
+
+      // Функция для отрисовки карточек в контейнере
+      const renderFriends = (data, container) => {
+        container.innerHTML = ""; // Очищаем контейнер перед добавлением новых карточек
+        let addUsers = 0;
+        data.forEach((invite) => {
+          let claimButton = null;
+          const friendBlock = document.createElement("div");
+          friendBlock.className = "card-button";
+
+          // Имя
+          const nameSpan = document.createElement("span");
+          nameSpan.classList.add("friend");
+          nameSpan.textContent = `Friend Name: ${invite.name.trim()}`;
+
+          // ID
+          const idSpan = document.createElement("span");
+          idSpan.classList.add("friend");
+          idSpan.textContent = `Player ID № ${invite.joinId}`;
+
+          // Награда за регистрацию
+          const profitSpan = document.createElement("span");
+          profitSpan.classList.add("friend");
+          profitSpan.textContent = `Your reward: ${formatProfit(
+            invite.reward
+          )} `;
+
+          // Кнопка забрать награду
+          if (!invite.finished) {
+            claimButton = document.createElement("button");
+            claimButton.id = `ClaimReward_${invite.id}`;
+            claimButton.textContent = `Claim reward`;
+            claimButton.onclick = () => {
+              room.send("getFriendReward", { rewardId: invite.id });
+              if (stateSound) {
+                buttonAudio.play().catch((error) => {
+                  console.log("Cant play button get Friend Reward", error);
+                });
+              }
+            };
+          }
+
+          // Добавляем все элементы в блок карточки
+          friendBlock.appendChild(nameSpan);
+          friendBlock.appendChild(idSpan);
+          friendBlock.appendChild(profitSpan);
+          if (claimButton) {
+            friendBlock.appendChild(claimButton);
+          }
+
+          // Добавляем блок в контейнер
+          addUsers += 1;
+          container.appendChild(friendBlock);
+        });
+
+        if (addUsers === 0) {
+          container.innerHTML = "<h3>You don't have an invited users</h3>";
+        }
+      };
+    </script>
+  </body>
+</html>
