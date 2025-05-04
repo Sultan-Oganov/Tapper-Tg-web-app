@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
 import * as Colyseus from "colyseus.js";
 import { useGameStore } from "@/store/gameStore";
-import { getTestToken } from "@/utils/getToken";
+// import { getTestToken } from "@/utils/getToken";
 import { sendSafe } from "@/utils/sendSafe";
+import Cookies from "js-cookie";
 
 const SERVER_URL = "wss://server.cryptosteron.com";
 const ROOM_NAME = "clicker";
@@ -36,7 +37,10 @@ export const useGameClient = () => {
     setIsConnecting(true);
 
     try {
-      const token = await getTestToken();
+      //DEV DESKTOP
+      // const token = await getTestToken();
+      //PROD TELEGRAM
+      const token = Cookies.get("token");
       const client = new Colyseus.Client(SERVER_URL);
       clientRef.current = client;
 
