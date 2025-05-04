@@ -5,6 +5,7 @@ import { useGameStore } from "@/store/gameStore";
 import { useFriendsStore } from "@/store/friendsStore";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { sendSafe } from "@/utils/sendSafe";
 
 export const useFriends = () => {
   const { room } = useGameStore();
@@ -48,14 +49,14 @@ export const useFriends = () => {
       if (data.success) {
         toast.success(t("toast.friend_reward_success"));
         reset();
-        room.send("getFriendsList", { page: 1, pageSize: 10 });
+        sendSafe(room, "getFriendsList", { page: 1, pageSize: 10 });
       } else {
         toast.error(data.message || t("toast.friend_reward_error"));
       }
     });
 
     startLoading();
-    room.send("getFriendsList", { page: 1, pageSize: 10 });
+    sendSafe(room, "getFriendsList", { page: 1, pageSize: 10 });
 
     return () => {
       unsubscribe();
@@ -69,13 +70,13 @@ export const useFriends = () => {
     if (friends.length >= total) return;
 
     startLoading();
-    room.send("getFriendsList", { page: page + 1, pageSize: 10 });
+    sendSafe(room, "getFriendsList", { page: page + 1, pageSize: 10 });
   };
 
   const claimReward = (rewardId: number) => {
     if (!room) return;
     console.log("[Client] Sending getFriendReward", rewardId);
-    room.send("getFriendReward", { rewardId });
+    sendSafe(room, "getFriendReward", { rewardId });
   };
 
   return { loadNextPage, claimReward };

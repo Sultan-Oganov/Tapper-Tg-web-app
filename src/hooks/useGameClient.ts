@@ -1,17 +1,16 @@
 import { useEffect, useRef } from "react";
 import * as Colyseus from "colyseus.js";
 import { useGameStore } from "@/store/gameStore";
-// import { getTestToken } from "@/utils/getToken";
-import Cookies from "js-cookie";
+import { getTestToken } from "@/utils/getToken";
+import { sendSafe } from "@/utils/sendSafe";
 
 const SERVER_URL = "wss://server.cryptosteron.com";
 const ROOM_NAME = "clicker";
+const RECONNECT_INTERVAL = 5000;
 const MAX_RECONNECT_ATTEMPTS = 1000;
-const RECONNECT_INTERVAL = 5000; // 5 секунд
 
 export const useGameClient = () => {
   const {
-    room,
     setRoom,
     setStateData,
     setIsConnected,
@@ -21,108 +20,82 @@ export const useGameClient = () => {
     setPlayerId,
   } = useGameStore();
 
-  const clientRef = useRef<Colyseus.Client>(null);
+  const clientRef = useRef<Colyseus.Client | null>(null);
   const reconnectAttempts = useRef(0);
-  const reconnectTimeout = useRef<any | null>(null);
-  const isManualDisconnect = useRef(false); // Чтобы отличать выход по кнопке от обрыва
+  const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isConnecting = useRef(false);
+  const isManualDisconnect = useRef(false);
 
-  const connect = async (isRetry = false) => {
+  const connect = async () => {
+    if (
+      isConnecting.current ||
+      reconnectAttempts.current >= MAX_RECONNECT_ATTEMPTS
+    )
+      return;
+    isConnecting.current = true;
+    setIsConnecting(true);
+
     try {
-      if (isRetry) {
-        setIsReconnecting(true);
-      } else {
-        setIsConnecting(true);
-      }
-
-      console.log(
-        `[Colyseus] ${isRetry ? "Reconnecting" : "Connecting"} to server...`
-      );
-
-      //DEV DESKTOP
-      // const token = await getTestToken();
-      //PROD TELEGRAM
-      const token = Cookies.get("token");
-
+      const token = await getTestToken();
       const client = new Colyseus.Client(SERVER_URL);
       clientRef.current = client;
 
       const room = await client.joinOrCreate(ROOM_NAME, { token });
-
-      console.log("[Colyseus] Connected to room:", room.id);
+      reconnectAttempts.current = 0;
 
       setRoom(room);
       setIsConnected(true);
       setError(null);
-      reconnectAttempts.current = 0;
 
-      // События комнаты
       room.onStateChange((state) => {
         setStateData(state as any);
-        console.log("[Colyseus] Room state updated:", state);
       });
 
       room.onMessage("serverTime", (data) => {
-        console.log("[Server] serverTime", data);
         setPlayerId(data?.playerId);
       });
 
       room.onMessage("ping", () => {
-        room.send("pong");
-        console.log("[Colyseus] Received ping, sent pong");
+        sendSafe(room, "pong");
       });
 
-      room.onLeave((code) => {
-        console.warn("[Colyseus] Left room, code:", code);
-        if (!isManualDisconnect.current) {
-          reconnect("Disconnected from room");
-        }
+      room.onLeave(() => {
+        handleDisconnection("Disconnected from room");
       });
 
-      room.onError((code, message) => {
-        console.error("[Colyseus] Room error:", code, message);
-        if (!isManualDisconnect.current) {
-          reconnect(`Room error: ${message}`);
-        }
+      room.onError(() => {
+        handleDisconnection("Room error");
       });
     } catch (err: any) {
-      console.error("[Colyseus] Connection error:", err.message || err);
-      if (!isManualDisconnect.current) {
-        reconnect(err.message || "Unknown connection error");
-      }
+      console.error("[Colyseus] Connection failed", err);
+      handleDisconnection("Connection failed");
     } finally {
+      isConnecting.current = false;
       setIsConnecting(false);
       setIsReconnecting(false);
     }
   };
 
-  const reconnect = (reason: string) => {
-    console.warn("[Colyseus] Reconnect triggered. Reason:", reason);
+  const handleDisconnection = (reason: string) => {
+    console.warn(`[Colyseus] ${reason}`);
     setIsConnected(false);
     setError(reason);
-
-    if (reconnectAttempts.current >= MAX_RECONNECT_ATTEMPTS) {
-      console.error(
-        "[Colyseus] Max reconnect attempts reached. Stopping reconnect."
-      );
-      return;
-    }
-
     reconnectAttempts.current++;
-    console.log(
-      `[Colyseus] Attempting reconnect #${reconnectAttempts.current} in ${
-        RECONNECT_INTERVAL / 1000
-      }s...`
-    );
 
-    reconnectTimeout.current = setTimeout(() => {
-      connect(true); // <-- Передаем флаг, что это переподключение
-    }, RECONNECT_INTERVAL);
+    if (reconnectAttempts.current < MAX_RECONNECT_ATTEMPTS) {
+      setIsReconnecting(true);
+      reconnectTimeout.current = setTimeout(() => {
+        connect();
+      }, RECONNECT_INTERVAL);
+    } else {
+      setError("Max reconnect attempts reached.");
+    }
   };
 
   const leaveRoom = async () => {
     console.log("[Colyseus] Manual leaveRoom called");
     isManualDisconnect.current = true;
-    const { room } = useGameStore.getState();
+    const room = useGameStore.getState().room;
     if (room) {
       try {
         await room.leave();
@@ -137,19 +110,25 @@ export const useGameClient = () => {
   };
 
   useEffect(() => {
-    connect(); // Первичное подключение
+    connect();
 
     return () => {
       console.log("[Colyseus] Cleaning up connection...");
+      isManualDisconnect.current = true;
       if (reconnectTimeout.current) {
         clearTimeout(reconnectTimeout.current);
       }
-      isManualDisconnect.current = true;
-      room?.leave(); // 👈 вместо clientRef.current?.close();
+      const room = useGameStore.getState().room;
+      if (room) {
+        room.leave();
+      }
+      setRoom(null);
+      setIsConnected(false);
     };
   }, []);
 
   return {
     leaveRoom,
+    reconnect: connect,
   };
 };

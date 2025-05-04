@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 //@ts-ignore
 import Slider from "react-slick";
@@ -12,6 +12,8 @@ import "slick-carousel/slick/slick-theme.css";
 import Loader from "@/components/misc/loader";
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
+import { useGameStore } from "@/store/gameStore";
+import { sendSafe } from "@/utils/sendSafe";
 
 const levelBackgrounds = [
   "radial-gradient(50% 50% at 50% 50%, #AFC09E 0%, #81976A 100%)", // зелёный
@@ -28,6 +30,7 @@ const levelBackgrounds = [
 
 export default function Level() {
   useLevels();
+  const { room } = useGameStore();
   const { levels, current, topPlayers } = useLevelsStore();
   const { t } = useTranslation();
 
@@ -48,8 +51,19 @@ export default function Level() {
     speed: 500,
     slidesToShow: 1,
     slidesToScroll: 1,
-    beforeChange: (_: number, next: number) => setCurrentSlide(next),
+    beforeChange: (_: number, next: number) => {
+      setCurrentSlide(next);
+      if (room && next) {
+        sendSafe(room, "helpLevels", { level: levels[next].level });
+      }
+    },
   };
+
+  useEffect(() => {
+    if (room && levels[currentSlide]?.level) {
+      sendSafe(room, "helpLevels", { level: levels[currentSlide].level });
+    }
+  }, [room, levels, currentSlide]);
 
   return (
     <div className={"h-[calc(100vh-75px)] flex flex-col justify-between"}>
@@ -137,34 +151,43 @@ export default function Level() {
         )}
 
         <div className="flex flex-col gap-2 mt-4 h-[calc(55vh-75px)] overflow-y-auto">
-          {topPlayers.map((player, i) => (
-            <div
-              key={`${player.username}-${i}`}
-              className="friends_invited_frame py-[8px] px-[12px] flex justify-between items-center"
-            >
-              {/* Левая часть: аватар и имя */}
-              <div className="flex items-center gap-2">
-                <img
-                  className="w-10 h-10 rounded-full"
-                  src={"/media/images/man_yellow.png"}
-                  alt={player.username}
-                />
-                <div>
-                  <div className="font-bold text-white">{player.username}</div>
-                  <div className="flex items-center gap-1 text-white/70 text-sm">
-                    <img src="/media/icons/bitcoin.svg" className="!w-5 !h-5" />
-                    {player.balance}
+          {topPlayers.length > 0 ? (
+            topPlayers.map((player, i) => (
+              <div
+                key={`${player.username}-${i}`}
+                className="friends_invited_frame py-[8px] px-[12px] flex justify-between items-center"
+              >
+                <div className="flex items-center gap-2">
+                  <img
+                    className="w-10 h-10 rounded-full"
+                    src={"/media/images/man_yellow.png"}
+                    alt={player.username}
+                  />
+                  <div>
+                    <div className="font-bold text-white">
+                      {player.username}
+                    </div>
+                    <div className="flex items-center gap-1 text-white/70 text-sm">
+                      <img
+                        src="/media/icons/bitcoin.svg"
+                        className="!w-5 !h-5"
+                      />
+                      {player.balance}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Правая часть: место и иконка */}
-              <div className="flex items-center gap-1 text-white font-bold text-sm">
-                <span>{player.total}</span>
-                <img src={`/media/icons/medal.png`} className="w-5 h-5" />
+                <div className="flex items-center gap-1 text-white font-bold text-sm">
+                  <span>{player.total}</span>
+                  <img src={`/media/icons/medal.png`} className="w-5 h-5" />
+                </div>
               </div>
+            ))
+          ) : (
+            <div className="text-white/60 text-center mt-6">
+              {t("level.no_players")}
             </div>
-          ))}
+          )}
         </div>
       </div>
       <DownTabs />

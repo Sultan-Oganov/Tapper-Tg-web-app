@@ -4,6 +4,7 @@ import { useDailyRewardStore } from "@/store/dailyRewardStore";
 import { toast } from "sonner";
 import { Reward } from "@/types/gameEvents";
 import { useTranslation } from "react-i18next";
+import { sendSafe } from "@/utils/sendSafe";
 
 export const useDailyReward = () => {
   const { room } = useGameStore();
@@ -12,13 +13,13 @@ export const useDailyReward = () => {
 
   const requestDailyRewards = useCallback(() => {
     if (!room) return;
-    room.send("getDailyRewardInfo");
+    sendSafe(room, "getDailyRewardInfo");
     console.log("[Event] Sent: getDailyRewardInfo");
   }, [room]);
 
   const claimDailyReward = useCallback(() => {
     if (!room) return;
-    room.send("claimDailyReward");
+    sendSafe(room, "claimDailyReward");
     console.log("[Event] Sent: claimDailyReward");
   }, [room]);
 

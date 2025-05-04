@@ -1,20 +1,25 @@
-"use client";
-
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useGameStore } from "@/store/gameStore";
 import { useLevelsStore } from "@/store/levelsStore";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { sendSafe } from "@/utils/sendSafe";
 
 export const useLevels = () => {
   const { room, stateData } = useGameStore();
   const { setLevels, setTopPlayers } = useLevelsStore();
   const { t } = useTranslation();
 
+  const previousLevelRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (!room || !stateData?.level) return;
-    // Отправка с указанием текущего уровня
-    room.send("helpLevels", { level: stateData.level });
+
+    // Если уровень изменился — отправляем helpLevels
+    if (previousLevelRef.current !== stateData.level) {
+      previousLevelRef.current = stateData.level;
+      sendSafe(room, "helpLevels", { level: stateData.level });
+    }
 
     const unsubscribe = room.onMessage("levelsData", (data) => {
       console.log("[levelsData] получено от сервера:", data);

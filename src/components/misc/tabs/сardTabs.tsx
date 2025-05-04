@@ -12,9 +12,13 @@ interface Props {
 }
 
 export default function CardTabs({ cardType, variant = "default" }: Props) {
-  const { isLoading } = useCardsStore();
+  const { isLoading, cards: cardsList } = useCardsStore();
   const { stateData } = useGameStore();
-  const cards = stateData?.userCards ?? [];
+
+  const cards = useMemo(
+    () => (cardsList || stateData?.userCards) ?? [],
+    [stateData?.userCards, cardsList]
+  );
   const { t } = useTranslation();
 
   const filteredCards = useMemo(

@@ -3,6 +3,7 @@ import { useGameStore } from "@/store/gameStore";
 import { useCardsStore } from "@/store/cardsStore";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { sendSafe } from "@/utils/sendSafe";
 
 export const useCards = () => {
   const { room } = useGameStore();
@@ -12,14 +13,15 @@ export const useCards = () => {
   const requestCards = useCallback(() => {
     if (!room) return;
     setIsLoading(true);
-    room.send("getCardsInfo");
+    sendSafe(room, "getCardsInfo");
     console.log("[Client] Sent: getCardsInfo");
-  }, [room]);
+    setIsLoading(false);
+  }, [room, setIsLoading]);
 
   const buyCard = useCallback(
     (cardId: number) => {
       if (!room) return;
-      room.send("buyCard", { cardId });
+      sendSafe(room, "buyCard", { cardId });
       console.log("[Client] Sent: buyCard", cardId);
     },
     [room]
@@ -27,7 +29,7 @@ export const useCards = () => {
 
   const collectProfit = useCallback(() => {
     if (!room) return;
-    room.send("collectCardsProfit");
+    sendSafe(room, "collectCardsProfit");
     console.log("[Client] Sent: collectCardsProfit");
   }, [room]);
 

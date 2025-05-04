@@ -17,7 +17,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   if (auth.error) {
     // TODO: Расскоментировать на продакшене
     // TODO: Закоментировать, чтобы не мешало разработке на десктопе
-    return <div>{t("auth.auth_error", { error: auth.error })}</div>;
+    // return <div>{t("auth.auth_error", { error: auth.error })}</div>;
   }
 
   return <>{children}</>;

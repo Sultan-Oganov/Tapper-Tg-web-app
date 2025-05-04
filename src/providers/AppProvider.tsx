@@ -9,7 +9,7 @@ export default function AppProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { isConnected, isConnecting, error } = useGameStore();
+  const { isConnected, isConnecting, isReconnecting, error } = useGameStore();
   useGameClient();
   useGameNotifications();
   const { t } = useTranslation();
@@ -18,6 +18,15 @@ export default function AppProvider({
     return (
       <div className="text-white text-center p-10">
         {t("connection.connecting")}
+        <Loader />
+      </div>
+    );
+  }
+
+  if (isReconnecting) {
+    return (
+      <div className="text-white text-center p-10">
+        {t("connection.reconnecting")}...
         <Loader />
       </div>
     );

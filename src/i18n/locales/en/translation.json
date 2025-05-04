@@ -29,7 +29,8 @@
   "connection": {
     "connecting": "🔄 Connecting to server...",
     "error": "❌ Connection error: {{error}}",
-    "disconnected": "⛔ Not connected to server"
+    "disconnected": "⛔ Not connected to server",
+    "reconnecting": "🔄 Reconnecting..."
   },
   "auth": {
     "please_open_in_telegram": "Please open the mini app in Telegram",
@@ -220,7 +221,8 @@
     "next": "Next",
     "top_players": "Top Players",
     "balance": "Balance",
-    "level": "Level"
+    "level": "Level",
+    "no_players": "No players at this level"
   },
 
   "partnership": {

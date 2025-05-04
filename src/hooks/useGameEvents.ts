@@ -3,6 +3,7 @@ import { useGameStore } from "@/store/gameStore";
 import { z } from "zod";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { sendSafe } from "@/utils/sendSafe";
 
 // Определяем схему для валидируемых данных
 const updateStateSchema = z.object({
@@ -21,7 +22,8 @@ export const useGameEvents = () => {
 
   const sendClick = (position?: { left: number; top: number }) => {
     if (!room) return;
-    room.send(
+    sendSafe(
+      room,
       "click",
       position ? { left: position.left, top: position.top } : {}
     );
@@ -30,30 +32,35 @@ export const useGameEvents = () => {
 
   const activateTurbo = () => {
     if (!room) return;
-    room.send("activateTurbo");
+    sendSafe(room, "activateTurbo");
     console.log("[Event] Sent: activateTurbo");
   };
 
   const restoreEnergy = () => {
     if (!room) return;
-    room.send("restoreEnergy");
+    sendSafe(room, "restoreEnergy");
   };
 
   const buyMultiTap = () => {
     if (!room) return;
-    room.send("buyMultiTap");
+    sendSafe(room, "buyMultiTap");
   };
 
   const buyEnergyUpgrade = () => {
     if (!room) return;
-    room.send("buyEnergyUpgrade");
+    sendSafe(room, "buyEnergyUpgrade");
     console.log("[Event] Sent: buyEnergyUpgrade");
   };
 
   const changeLanguage = (language: string) => {
     if (!room) return;
-    room.send("changeLanguage", { language });
-    console.log("[Event] Sent: changeLanguage", language);
+
+    try {
+      sendSafe(room, "changeLanguage", { language });
+      console.log("[Event] Sent: changeLanguage", language);
+    } catch (err) {
+      console.error("Failed to send changeLanguage", err);
+    }
   };
 
   useEffect(() => {
