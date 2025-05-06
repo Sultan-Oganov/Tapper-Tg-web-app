@@ -47,10 +47,6 @@ export const useGameClient = () => {
       const room = await client.joinOrCreate(ROOM_NAME, { token });
       reconnectAttempts.current = 0;
 
-      setRoom(room);
-      setIsConnected(true);
-      setError(null);
-
       room.onStateChange((state) => {
         setStateData(state as any);
       });
@@ -62,6 +58,10 @@ export const useGameClient = () => {
       room.onMessage("ping", () => {
         sendSafe(room, "pong");
       });
+
+      setRoom(room);
+      setIsConnected(true);
+      setError(null);
 
       room.onLeave(() => {
         handleDisconnection("Disconnected from room");

@@ -27,12 +27,6 @@ export const useCards = () => {
     [room]
   );
 
-  const collectProfit = useCallback(() => {
-    if (!room) return;
-    sendSafe(room, "collectCardsProfit");
-    console.log("[Client] Sent: collectCardsProfit");
-  }, [room]);
-
   useEffect(() => {
     if (!room) return;
 
@@ -61,6 +55,9 @@ export const useCards = () => {
             amount: `+${data.profit?.toLocaleString()}`,
           })
         );
+        // Автоматический сбор прибыли
+        sendSafe(room, "collectCardsProfit");
+        console.log("[Client] Sent: collectCardsProfit (auto)");
       }
     });
 
@@ -74,6 +71,5 @@ export const useCards = () => {
   return {
     requestCards,
     buyCard,
-    collectProfit,
   };
 };

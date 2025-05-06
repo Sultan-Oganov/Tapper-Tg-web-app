@@ -1,23 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useGameStore } from "@/store/gameStore";
-import { z } from "zod";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { sendSafe } from "@/utils/sendSafe";
-
-// Определяем схему для валидируемых данных
-const updateStateSchema = z.object({
-  balance: z.number(),
-  clickValue: z.number().optional(),
-  energy: z.number().optional(),
-  energyMax: z.number().optional(),
-  totalClicks: z.number().optional(),
-  previousLevelClicks: z.number().optional(),
-  nextLevelClicks: z.number().optional(),
-});
+import { RoomState } from "@/types/gameEvents";
 
 export const useGameEvents = () => {
-  const { room, setStateData } = useGameStore(); // <-- берем setServerError
+  const { room, setStateData } = useGameStore();
   const { t } = useTranslation();
 
   const sendClick = (position?: { left: number; top: number }) => {
@@ -27,13 +16,11 @@ export const useGameEvents = () => {
       "click",
       position ? { left: position.left, top: position.top } : {}
     );
-    console.log("[Event] Sent: click", position);
   };
 
   const activateTurbo = () => {
     if (!room) return;
     sendSafe(room, "activateTurbo");
-    console.log("[Event] Sent: activateTurbo");
   };
 
   const restoreEnergy = () => {
@@ -49,54 +36,68 @@ export const useGameEvents = () => {
   const buyEnergyUpgrade = () => {
     if (!room) return;
     sendSafe(room, "buyEnergyUpgrade");
-    console.log("[Event] Sent: buyEnergyUpgrade");
   };
 
   const changeLanguage = (language: string) => {
     if (!room) return;
-
-    try {
-      sendSafe(room, "changeLanguage", { language });
-      console.log("[Event] Sent: changeLanguage", language);
-    } catch (err) {
-      console.error("Failed to send changeLanguage", err);
-    }
+    sendSafe(room, "changeLanguage", { language });
   };
 
   useEffect(() => {
     if (!room) return;
 
-    const onUpdateState = (data: any) => {
-      console.log("[Server] Received updateState:", data);
-
-      const parseResult = updateStateSchema.safeParse(data);
-
-      if (!parseResult.success) {
-        console.error(
-          "[Validation Error] Invalid updateState:",
-          parseResult.error.format()
-        );
-        toast.error(t("toast.update_state_error")); // <-- Всплывающее уведомление
-        return;
-      }
-
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      //@ts-ignore
-      setStateData(parseResult.data);
+    const onUpdateState = (newState: RoomState) => {
+      setStateData({ ...newState });
     };
 
     const onError = (data: any) => {
-      console.error("[Server] Received error:", data);
-      toast.error(data.message || t("toast.server_error")); // <-- Всплывающее уведомление
+      console.error("[Server Error]", data);
+      toast.error(data.message || t("toast.server_error"));
     };
 
-    room.onMessage("updateState", onUpdateState);
+    const onTurboBoost = (data: any) => {
+      if (data.success && data.code === "Enable") {
+        toast.success(t("toast.turbo_activated"));
+      } else {
+        toast.error(data.message || t("toast.turbo_error"));
+      }
+    };
+
+    const onRestoreEnergy = (data: any) => {
+      if (data.success && data.code === "OK") {
+        toast.success(t("toast.energy_restored"));
+      } else {
+        toast.error(data.message || t("toast.energy_restore_error"));
+      }
+    };
+
+    const onBuyMultiTap = (data: any) => {
+      if (data.success) {
+        toast.success(t("toast.multitap_upgrade_success"));
+      } else {
+        toast.error(data.message || t("toast.multitap_upgrade_error"));
+      }
+    };
+
+    const onBuyEnergyUpgrade = (data: any) => {
+      if (data.success) {
+        toast.success(t("toast.energy_upgrade_success"));
+      } else {
+        toast.error(data.message || t("toast.energy_upgrade_error"));
+      }
+    };
+
     room.onMessage("error", onError);
+    room.onMessage("turboBoost", onTurboBoost);
+    room.onMessage("restoreInstantEnergy", onRestoreEnergy);
+    room.onMessage("buyMultiTapResult", onBuyMultiTap);
+    room.onMessage("buyEnergyResult", onBuyEnergyUpgrade);
+    room.onStateChange(onUpdateState);
 
     return () => {
-      room?.removeAllListeners();
+      room.removeAllListeners();
     };
-  }, [room, setStateData]);
+  }, [room, setStateData, t]);
 
   return {
     sendClick,

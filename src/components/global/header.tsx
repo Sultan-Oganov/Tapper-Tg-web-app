@@ -6,17 +6,9 @@ import SwitchCoin from "@/components/misc/header/switchCoin";
 import { Link } from "react-router-dom";
 import LanguageSwitcher from "../misc/languageSwitcher";
 import { useTranslation } from "react-i18next";
-// import { useGameClient } from "@/hooks/useGameClient";
-// import { useGameStore } from "@/store/gameStore";
 
 function Menu() {
   const [isOpen, setIsOpen] = useState(false);
-  // const { leaveRoom } = useGameClient(); // <-- Получаем leaveRoom
-  // const { isConnected } = useGameStore();
-  // const handleLeaveRoom = async () => {
-  //   await leaveRoom(); // <-- Ждем выхода из комнаты
-  //   setIsOpen(false); // <-- Закрываем меню после выхода
-  // };
   const { t } = useTranslation();
 
   return (

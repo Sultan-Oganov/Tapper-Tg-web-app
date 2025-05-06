@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useGameStore } from "@/store/gameStore";
 import { useGameEvents } from "@/hooks/useGameEvents";
-import { toast } from "sonner";
 import { differenceInSeconds } from "date-fns";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 function formatSecondsToHHMMSS(totalSeconds: number): string {
   const hours = Math.floor(totalSeconds / 3600)
@@ -21,10 +21,11 @@ function formatSecondsToHHMMSS(totalSeconds: number): string {
 export default function FreeUpgrade() {
   const { stateData } = useGameStore();
   const { activateTurbo, restoreEnergy } = useGameEvents();
-
-  const [turboCooldown, setTurboCooldown] = useState<null | string>(null);
   const { t } = useTranslation();
+  const [turboCooldown, setTurboCooldown] = useState<string>("");
+  const [energyCooldown, setEnergyCooldown] = useState<string>("");
 
+  // Таймер турбо буста
   useEffect(() => {
     const interval = setInterval(() => {
       if (
@@ -44,13 +45,31 @@ export default function FreeUpgrade() {
     return () => clearInterval(interval);
   }, [stateData?.nextTurboBoostTime]);
 
+  // Таймер энергии
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (
+        stateData?.nextEnergyRestoreTime &&
+        stateData.nextEnergyRestoreTime > Date.now()
+      ) {
+        const seconds = Math.floor(
+          (stateData.nextEnergyRestoreTime - Date.now()) / 1000
+        );
+        setEnergyCooldown(formatSecondsToHHMMSS(seconds));
+      } else {
+        setEnergyCooldown("");
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [stateData?.nextEnergyRestoreTime]);
+
   const handleEnergyClick = () => {
     if (
       stateData?.energyRestoreRemaining &&
       stateData.energyRestoreRemaining > 0
     ) {
       restoreEnergy();
-      toast.success(t("toast.energy_restored"));
     } else {
       toast.error(t("toast.no_energy_restore"));
     }
@@ -69,20 +88,12 @@ export default function FreeUpgrade() {
 
     if (!stateData?.turboBoostStatus) {
       activateTurbo();
-      toast.success(t("toast.turbo_activated"));
     } else {
       toast.error(t("toast.turbo_active"));
     }
   };
 
-  const restoreTime = stateData?.nextEnergyRestoreTime
-    ? new Date(stateData.nextEnergyRestoreTime * 1000).toLocaleTimeString()
-    : "00:00:00";
-
-  const shouldShowRestoreTimer =
-    (stateData?.energyRestoreRemaining ?? 0) === 0 &&
-    !!stateData?.nextEnergyRestoreTime;
-
+  const shouldShowRestoreTimer = !!stateData?.nextEnergyRestoreTime;
   const shouldShowTurboTimer =
     !stateData?.turboBoostStatus &&
     stateData?.nextTurboBoostTime &&
@@ -111,7 +122,7 @@ export default function FreeUpgrade() {
         </div>
         {shouldShowRestoreTimer && (
           <div className="amplifiers_boosters_taps_free-right-time">
-            {restoreTime}
+            {energyCooldown}
           </div>
         )}
       </div>

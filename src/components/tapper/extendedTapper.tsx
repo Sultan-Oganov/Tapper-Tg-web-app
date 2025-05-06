@@ -9,6 +9,8 @@ import { useGameEvents } from "@/hooks/useGameEvents";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 
+const MAX_TOUCHES = 3;
+
 export default function ExtendedTapper() {
   const { sendClick } = useGameEvents(); // подключаем отправку событий
 
@@ -23,24 +25,17 @@ export default function ExtendedTapper() {
 
   const getRandomOffset = () => Math.floor(Math.random() * 100) + 50;
 
+  const wasTouched = useRef(false); // флаг для touch
+
   const handleClick = () => {
-    if (charge <= 4) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          text: t("home.no_charge"),
-          offset: getRandomOffset(),
-        },
-      ]);
-      return;
-    }
+    const text =
+      charge <= 4 ? t("home.no_charge") : String(stateData?.clickValue ?? 0);
 
     setMessages((prev) => [
       ...prev,
       {
         id: Date.now(),
-        text: String(stateData?.clickValue ?? 0),
+        text,
         offset: getRandomOffset(),
       },
     ]);
@@ -48,6 +43,11 @@ export default function ExtendedTapper() {
 
   const handleDivClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!divRef.current || !stateData) return;
+
+    if (wasTouched.current) {
+      wasTouched.current = false; // 👈 сбрасываем — клик после тача игнорим
+      return;
+    }
 
     const rect = divRef.current.getBoundingClientRect();
 
@@ -57,6 +57,26 @@ export default function ExtendedTapper() {
     });
 
     handleClick();
+  };
+
+  // Обработка тачскрина
+  const handleTouch = (event: React.TouchEvent) => {
+    event.preventDefault();
+    if (!divRef.current || !stateData) return;
+
+    wasTouched.current = true; // 👈 ставим флаг
+
+    if (event.touches.length <= MAX_TOUCHES) {
+      const touch = event.touches[0];
+      const rect = divRef.current.getBoundingClientRect();
+
+      sendClick({
+        left: touch.clientX - rect.left,
+        top: touch.clientY - rect.top,
+      });
+
+      handleClick();
+    }
   };
 
   useEffect(() => {
@@ -76,6 +96,7 @@ export default function ExtendedTapper() {
             className="boost_frame_machine !relative"
             ref={divRef}
             onClick={handleDivClick}
+            onTouchStart={handleTouch}
           >
             <img
               src="/media/images/cashier.png"

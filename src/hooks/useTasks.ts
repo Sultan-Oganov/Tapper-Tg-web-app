@@ -4,17 +4,15 @@ import { useTasksStore } from "@/store/tasksStore";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { sendSafe } from "@/utils/sendSafe";
-import { useGameClient } from "./useGameClient";
 
 export const useTasks = () => {
   const { room } = useGameStore();
   const { setTasks, updateTask } = useTasksStore();
-  const { reconnect } = useGameClient();
   const { t } = useTranslation();
 
   const requestTasks = useCallback(() => {
     if (!room) return;
-    sendSafe(room, "getTasks", {}, () => reconnect("getTasks"));
+    sendSafe(room, "getTasks");
     console.log("[Client] Sent: getTasks");
   }, [room]);
 

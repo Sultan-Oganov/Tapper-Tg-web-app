@@ -18,10 +18,8 @@ export default function UpgradeButton({ info }: { info: any }) {
   const handleBuy = () => {
     if (info.type === "multitap") {
       buyMultiTap();
-      toast.success(t("boosters.boost_upgraded"));
     } else if (info.type === "energy") {
       buyEnergyUpgrade();
-      toast.success(t("boosters.energy_upgraded"));
     } else {
       toast.error(t("boosters.unknown_booster"));
     }

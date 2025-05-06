@@ -17,9 +17,7 @@ export default function DailyReward() {
     if (isOpen) requestDailyRewards();
   }, [isOpen]);
   const currentAvailable = rewards.find((r) => r.isAvailable && !r.isCollected);
-  const alreadyCollected = rewards.every(
-    (r) => !r.isAvailable || r.isCollected
-  );
+
   return (
     <>
       <button
@@ -28,9 +26,9 @@ export default function DailyReward() {
       >
         <div className="flex items-center justify-center gap-2 bg-white rounded-full px-3 py-1 text-black font-bold text-[14px]">
           <img src="/media/icons/bitcoin.svg" className="w-[20px]" />
-          {alreadyCollected
-            ? t("tasks.dailyReward.received")
-            : `+${currentAvailable?.reward?.toLocaleString("ru-RU") || "0"}`}
+          {currentAvailable
+            ? `+${currentAvailable.reward.toLocaleString("ru-RU")}`
+            : t("tasks.dailyReward.received")}
         </div>
       </button>
 

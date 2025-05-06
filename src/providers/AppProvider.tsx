@@ -1,6 +1,5 @@
 import Loader from "@/components/misc/loader";
 import { useGameClient } from "@/hooks/useGameClient";
-import { useGameNotifications } from "@/hooks/useGameNotifications";
 import { useGameStore } from "@/store/gameStore";
 import { useTranslation } from "react-i18next";
 
@@ -11,7 +10,7 @@ export default function AppProvider({
 }) {
   const { isConnected, isConnecting, isReconnecting, error } = useGameStore();
   useGameClient();
-  useGameNotifications();
+
   const { t } = useTranslation();
 
   if (isConnecting) {
