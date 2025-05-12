@@ -26,7 +26,13 @@ export default function DefaultTapper() {
   // Показываем всплывающий текст
   const handleClick = () => {
     const text =
-      charge <= 4 ? t("home.no_charge") : String(stateData?.clickValue ?? 0);
+      charge <= 4
+        ? t("home.no_charge")
+        : String(
+            stateData?.turboBoostStatus
+              ? (stateData.clickValue ?? 0) * 2
+              : stateData?.clickValue ?? 0
+          );
 
     setMessages((prev) => [
       ...prev,

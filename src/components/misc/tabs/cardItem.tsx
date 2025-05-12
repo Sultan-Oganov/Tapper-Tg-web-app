@@ -14,15 +14,12 @@ interface Props {
 export default function CardItem({ card, variant = "default" }: Props) {
   const { buyCard } = useCards();
   const { stateData } = useGameStore();
-
-  const balance = stateData?.balance ?? 0;
-  const level = stateData?.level ?? 0;
-
-  const reasons: string[] = [];
-
   const { t } = useTranslation();
 
-  // Аналогично демо-версии
+  const level = stateData?.level ?? 0;
+  const reasons: string[] = [];
+
+  // Показываем причины только если карточка не разблокирована
   if (!card.unlocked) {
     if (card.dependencyCardId && card.dependencyCardLevel) {
       reasons.push(
@@ -46,15 +43,8 @@ export default function CardItem({ card, variant = "default" }: Props) {
     }
   }
 
-  if (card.level >= card.maxCardLevel) {
-    reasons.push(t("home.card_locked_reason_maxed"));
-  }
-
-  if (balance < card.price) {
-    reasons.push(t("home.card_locked_reason_balance"));
-  }
-
-  const canBuy = reasons.length === 0;
+  // Только проверка unlocked, как в ванильном коде
+  const canBuy = card.unlocked;
   const isBig = variant === "default";
 
   return (

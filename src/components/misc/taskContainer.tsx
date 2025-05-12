@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTasksStore } from "@/store/tasksStore";
 import { useTasks } from "@/hooks/useTasks";
 import clsx from "clsx";
@@ -19,6 +19,7 @@ export default function TaskContainer() {
   const { tasks } = useTasksStore();
   const { requestTasks, claimTask } = useTasks();
   const { t } = useTranslation();
+  const [subscribedTasks, setSubscribedTasks] = useState<number[]>([]);
 
   const taskTitles: Record<string, string> = {
     subscribe_channel: t("taskTitles.subscribe_channel"),
@@ -27,6 +28,10 @@ export default function TaskContainer() {
     invite_friends_10: t("taskTitles.invite_friends_10"),
     deposit_10: t("taskTitles.deposit_10"),
     play_crash_10: t("taskTitles.play_crash_10"),
+  };
+
+  const handleSubscribe = (taskId: number) => {
+    setSubscribedTasks((prev) => [...prev, taskId]);
   };
 
   useEffect(() => {
@@ -43,16 +48,13 @@ export default function TaskContainer() {
         const isCanClick =
           (task.status === "claim" || task.status === "active") &&
           !task.finished;
+        const isSubscribed = subscribedTasks.includes(task.id);
+
         return (
           <div
             key={task.id}
-            onClick={() => {
-              if (isCanClick) {
-                claimTask(task.id);
-              }
-            }}
             className={clsx(
-              "tasks_frame py-[11px] px-[14px] flex items-center gap-[12px] cursor-pointer transition-opacity",
+              "tasks_frame py-[11px] px-[14px] flex items-center gap-[12px]",
               task.finished && "opacity-50 pointer-events-none"
             )}
           >
@@ -62,7 +64,7 @@ export default function TaskContainer() {
               className="min-w-9 min-h-9 max-w-9 max-h-9 rounded-xl"
             />
 
-            <div className="flex flex-col gap-[6px]">
+            <div className="flex flex-col gap-[6px] flex-1">
               <div className="tasks_frame_info_title text-white text-[14px] font-bold">
                 {taskTitles[task.task] || t("taskTitles.default")}
               </div>
@@ -73,6 +75,28 @@ export default function TaskContainer() {
                 />
                 +{task.reward}
               </div>
+            </div>
+
+            <div className="flex gap-2">
+              {task.url && task.status === "active" && !isSubscribed && (
+                <a
+                  href={task.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-[#2B3569] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#3B4579] transition-colors"
+                  onClick={() => handleSubscribe(task.id)}
+                >
+                  {t("tasks.subscribe")}
+                </a>
+              )}
+              {isCanClick && (isSubscribed || task.status === "claim") && (
+                <button
+                  onClick={() => claimTask(task.id)}
+                  className="bg-[#2B3569] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#3B4579] transition-colors"
+                >
+                  {t("tasks.claim")}
+                </button>
+              )}
             </div>
           </div>
         );

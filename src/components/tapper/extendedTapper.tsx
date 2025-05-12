@@ -29,7 +29,13 @@ export default function ExtendedTapper() {
 
   const handleClick = () => {
     const text =
-      charge <= 4 ? t("home.no_charge") : String(stateData?.clickValue ?? 0);
+      charge <= 4
+        ? t("home.no_charge")
+        : String(
+            stateData?.turboBoostStatus
+              ? (stateData.clickValue ?? 0) * 2
+              : stateData?.clickValue ?? 0
+          );
 
     setMessages((prev) => [
       ...prev,
@@ -148,7 +154,11 @@ export default function ExtendedTapper() {
           {[
             {
               label: t("home.tapper_click"),
-              value: `+${stateData?.multiTapLevel}`,
+              value: `+${
+                stateData?.turboBoostStatus
+                  ? (stateData.clickValue ?? 0) * 2
+                  : stateData?.clickValue ?? 0
+              }`,
             },
             {
               label: t("home.tapper_to_upgrade"),

@@ -5,6 +5,7 @@ import CardItem from "./cardItem";
 import { useMemo } from "react";
 import { useGameStore } from "@/store/gameStore";
 import { useTranslation } from "react-i18next";
+import { useCards } from "@/hooks/useCards";
 
 interface Props {
   cardType: number;
@@ -16,15 +17,17 @@ export default function CardTabs({ cardType, variant = "default" }: Props) {
   const { stateData } = useGameStore();
 
   const cards = useMemo(
-    () => (cardsList || stateData?.userCards) ?? [],
+    () => (cardsList?.length ? cardsList : stateData?.userCards) ?? [],
     [stateData?.userCards, cardsList]
   );
-  const { t } = useTranslation();
+  useCards();
 
   const filteredCards = useMemo(
     () => cards.filter((card) => card.cardType === cardType),
     [cards, cardType]
   );
+
+  const { t } = useTranslation();
 
   return (
     <div className="sections_taper mt-[8px]">

@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { useGameStore } from "@/store/gameStore";
 import { useCardsStore } from "@/store/cardsStore";
 import { toast } from "sonner";
@@ -6,25 +6,32 @@ import { useTranslation } from "react-i18next";
 import { sendSafe } from "@/utils/sendSafe";
 
 export const useCards = () => {
-  const { room } = useGameStore();
+  const { room, stateData } = useGameStore();
   const { setCards, setMenu, setIsLoading } = useCardsStore();
   const { t } = useTranslation();
+  const isRequesting = useRef(false);
 
-  const requestCards = useCallback(() => {
-    if (!room) return;
-    setIsLoading(true);
-    sendSafe(room, "getCardsInfo");
-    console.log("[Client] Sent: getCardsInfo");
-    setIsLoading(false);
+  const requestCards = useCallback(async () => {
+    if (!room || isRequesting.current) return;
+
+    try {
+      isRequesting.current = true;
+      setIsLoading(true);
+      sendSafe(room, "getCardsInfo");
+      console.log("[Client] Sent: getCardsInfo");
+    } finally {
+      isRequesting.current = false;
+    }
   }, [room, setIsLoading]);
 
   const buyCard = useCallback(
     (cardId: number) => {
       if (!room) return;
+      setIsLoading(true);
       sendSafe(room, "buyCard", { cardId });
       console.log("[Client] Sent: buyCard", cardId);
     },
-    [room]
+    [room, setIsLoading]
   );
 
   useEffect(() => {
@@ -32,8 +39,10 @@ export const useCards = () => {
 
     const unsubscribeInfo = room.onMessage("cardsInfo", (data) => {
       console.log("[Server] cardsInfo", data);
+      if (!data.cards) return;
+
       setCards(data.cards);
-      setMenu(data.menu);
+      setMenu(data.menu || []);
       setIsLoading(false);
     });
 
@@ -41,9 +50,10 @@ export const useCards = () => {
       console.log("[Server] profitCardsBuyStatus", data);
       if (data.status) {
         toast.success(data.message || t("toast.card_buy_success"));
-        // Ждём новый cardsInfo от сервера
+        requestCards();
       } else {
         toast.error(data.message || t("toast.card_buy_error"));
+        setIsLoading(false);
       }
     });
 
@@ -55,9 +65,17 @@ export const useCards = () => {
             amount: `+${data.profit?.toLocaleString()}`,
           })
         );
-        // Автоматический сбор прибыли
         sendSafe(room, "collectCardsProfit");
         console.log("[Client] Sent: collectCardsProfit (auto)");
+        requestCards();
+      }
+    });
+
+    room.onStateChange((state) => {
+      if (state.userCards) {
+        console.log("[Server] State changed, updating cards");
+        setCards(state.userCards);
+        setIsLoading(false);
       }
     });
 
@@ -66,7 +84,7 @@ export const useCards = () => {
       unsubscribeBuy();
       unsubscribeProfit();
     };
-  }, [room, setCards, setMenu, setIsLoading]);
+  }, [room, setCards, setMenu, setIsLoading, requestCards, t]);
 
   return {
     requestCards,

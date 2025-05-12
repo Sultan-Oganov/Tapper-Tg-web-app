@@ -59,6 +59,24 @@ export const useGameClient = () => {
         sendSafe(room, "pong");
       });
 
+      room.onMessage("pong", (data) => {
+        if (data?.pingTime) {
+          const latency = Date.now() - data.pingTime;
+          console.log(`[Colyseus] Latency: ${latency}ms`);
+          const currentState = useGameStore.getState().stateData;
+          if (currentState) {
+            setStateData({
+              ...currentState,
+              latency,
+              connectionQuality: Math.max(
+                0,
+                Math.min(100, 100 - (latency / 1000) * 100)
+              ),
+            });
+          }
+        }
+      });
+
       setRoom(room);
       setIsConnected(true);
       setError(null);

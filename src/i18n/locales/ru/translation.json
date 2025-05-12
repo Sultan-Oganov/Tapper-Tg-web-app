@@ -245,7 +245,9 @@
     "listTitle": "Список заданий",
     "empty": "Задачи не найдены",
     "rewardHintTitle": "Ежедневная награда",
-    "rewardHintDescription": "Забирай монеты за ежедневный вход в игру без пропусков!"
+    "rewardHintDescription": "Забирай монеты за ежедневный вход в игру без пропусков!",
+    "subscribe": "Подписаться",
+    "claim": "Получить награду"
   },
   "taskTitles": {
     "subscribe_channel": "Присоединись к нашему TG",

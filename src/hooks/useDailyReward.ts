@@ -2,7 +2,7 @@ import { useEffect, useCallback } from "react";
 import { useGameStore } from "@/store/gameStore";
 import { useDailyRewardStore } from "@/store/dailyRewardStore";
 import { toast } from "sonner";
-import { Reward } from "@/types/gameEvents";
+import { Reward, RoomState } from "@/types/gameEvents";
 import { useTranslation } from "react-i18next";
 import { sendSafe } from "@/utils/sendSafe";
 
@@ -45,17 +45,24 @@ export const useDailyReward = () => {
       console.log("[Server] Received rewardClaim:", data);
     };
 
-    const unsubscribeInfo = room.onMessage(
-      "dailyRewardInfo",
-      onDailyRewardInfo
-    );
-    const unsubscribeClaim = room.onMessage("rewardClaim", onRewardClaim);
+    const onStateChange = (state: RoomState) => {
+      if (state.availableRewards) {
+        setRewards(state.availableRewards);
+        console.log(
+          "[Server] Received state update for dailyRewards:",
+          state.availableRewards
+        );
+      }
+    };
+
+    room.onMessage("dailyRewardInfo", onDailyRewardInfo);
+    room.onMessage("rewardClaim", onRewardClaim);
+    room.onStateChange(onStateChange);
 
     return () => {
-      unsubscribeInfo();
-      unsubscribeClaim();
+      room.removeAllListeners();
     };
-  }, [room, setRewards]);
+  }, [room, setRewards, t]);
 
   return { rewards, requestDailyRewards, claimDailyReward };
 };
