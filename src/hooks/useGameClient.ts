@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import * as Colyseus from "colyseus.js";
 import { useGameStore } from "@/store/gameStore";
-// import { getTestToken } from "@/utils/getToken";
+import { getTestToken } from "@/utils/getToken";
 import { sendSafe } from "@/utils/sendSafe";
 import Cookies from "js-cookie";
 
@@ -57,24 +57,6 @@ export const useGameClient = () => {
 
       room.onMessage("ping", () => {
         sendSafe(room, "pong");
-      });
-
-      room.onMessage("pong", (data) => {
-        if (data?.pingTime) {
-          const latency = Date.now() - data.pingTime;
-          console.log(`[Colyseus] Latency: ${latency}ms`);
-          const currentState = useGameStore.getState().stateData;
-          if (currentState) {
-            setStateData({
-              ...currentState,
-              latency,
-              connectionQuality: Math.max(
-                0,
-                Math.min(100, 100 - (latency / 1000) * 100)
-              ),
-            });
-          }
-        }
       });
 
       setRoom(room);

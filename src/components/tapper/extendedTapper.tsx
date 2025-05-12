@@ -191,7 +191,7 @@ export default function ExtendedTapper() {
         {!DefaultBoost ? (
           <>
             <BoosterBuy />
-            <MainControllerTab />
+            {/* <MainControllerTab /> */}
           </>
         ) : (
           TapperBase

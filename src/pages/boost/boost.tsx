@@ -9,7 +9,7 @@ export default function Boost() {
         <BoosterBuy />
         <MainControllerTab />
       </div>
-      <DefaultTapper />
+      {/* <DefaultTapper /> */}
     </div>
   );
 }
