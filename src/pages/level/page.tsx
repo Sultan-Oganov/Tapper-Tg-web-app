@@ -53,17 +53,11 @@ export default function Level() {
     slidesToScroll: 1,
     beforeChange: (_: number, next: number) => {
       setCurrentSlide(next);
-      if (room && next) {
+      if (room && levels[next]?.level) {
         sendSafe(room, "helpLevels", { level: levels[next].level });
       }
     },
   };
-
-  useEffect(() => {
-    if (room && levels[currentSlide]?.level) {
-      sendSafe(room, "helpLevels", { level: levels[currentSlide].level });
-    }
-  }, [room, levels, currentSlide]);
 
   return (
     <div className={"h-[calc(100vh-75px)] flex flex-col justify-between"}>
