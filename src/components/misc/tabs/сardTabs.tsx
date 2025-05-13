@@ -52,13 +52,7 @@ export default function CardTabs({ cardType, variant = "default" }: Props) {
             {t("home.cards_empty")}
           </div>
         ) : (
-          <div
-            className={
-              variant === "compact"
-                ? "flex flex-col gap-[12px]"
-                : "grid grid-cols-2 gap-[12px]"
-            }
-          >
+          <div className={"flex flex-col gap-[12px]"}>
             {filteredCards.map((card) => (
               <CardItem key={card.id} card={card} variant={variant} />
             ))}

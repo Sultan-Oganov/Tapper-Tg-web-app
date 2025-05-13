@@ -56,9 +56,9 @@
     "card_locked_reason_maxed": "Достигнут максимальный уровень",
     "card_locked_reason_balance": "Недостаточно монет",
     "cards_empty": "В этом разделе пока нет карточек",
-    "lvl_prefix": "Lvl",
-    "profit_per_hour": "Прибыль в час",
-    "next_level": "Следующий уровень"
+    "lvl_prefix": "Уровень",
+    "profit_per_hour": "Прибыль/час",
+    "buy_btn": "Купить"
   },
 
   "boosters": {

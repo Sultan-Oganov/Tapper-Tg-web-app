@@ -6,6 +6,7 @@ import { useGameStore } from "@/store/gameStore";
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import BigCard from "./BigCard";
+import { formatterNumber } from "@/utils/foramatter";
 
 interface Props {
   card: Card;
@@ -54,83 +55,89 @@ export default function CardItem({ card, variant = "default" }: Props) {
     <div
       className={clsx(
         "tokens_extended_card",
-        canBuy
-          ? "cursor-pointer"
-          : "cursor-not-allowed opacity-40 pointer-events-none"
+        !canBuy && "cursor-not-allowed opacity-40 pointer-events-none"
       )}
-      onClick={() => {
-        if (canBuy) {
-          buyCard(card.id);
-        }
-      }}
     >
       <div className="tokens_card_top">
-        <div className="tokens_card_top-title">
-          #{card.id} {card.name}
+        <div className="grow flex items-center gap-2.5">
+          <img
+            src={`/media/images/bear-${(card.id % 2) + 1}.png`}
+            className={"w-[40px] h-[40px] rounded-full"}
+          />
+          <div className="flex-col gap-0.5">
+            <div className="tokens_card_top-title">{card.name}</div>
+            <div className="tokens_card_top-subtitle">№{card.id}</div>
+          </div>
         </div>
         <div className="tokens_card_top-options">
           <img src="/media/icons/point.svg" />
         </div>
       </div>
 
-      <div className={"tokens_card_bot justify-between"}>
-        <div className={"w-full flex gap-[12px] items-center"}>
+      <div className="flex flex-col gap-6">
+        <div className="flex justify-between items-center">
+          <div className={"tokens_card_bot_chapters"}>
+            <div className="tokens_card_bot_chapters-text text-[#ffffff7a]">
+              {t("home.lvl_prefix")} {card.level}
+            </div>
+            <div className="tokens_card_bot_chapters-wallet">
+              <img src="/media/icons/bitcoin.png" />
+              <div className="tokens_card_bot_chapters-wallet-amount text-[#ffffff7a]">
+                {formatterNumber?.format(card?.price) ||
+                  card?.price?.toLocaleString()}
+              </div>
+            </div>
+          </div>
           <img
-            src={`/media/images/bear-${(card.id % 2) + 1}.png`}
-            className={"w-[40px] h-[40px] rounded-xl"}
+            src="/media/icons/triangleRight.svg"
+            className="w-5 h-5"
+            alt="icon"
           />
-          <div className="flex justify-between items-center grow flex-wrap">
-            <div className={"tokens_card_bot_chapters flex-1/2"}>
-              <div className="tokens_card_bot_chapters-text">
-                {t("home.lvl_prefix")} {card.level}
-              </div>
-              <div className="tokens_card_bot_chapters-wallet">
-                <img src="/media/icons/bitcoin.png" />
-                <div className="tokens_card_bot_chapters-wallet-amount">
-                  {card?.price?.toLocaleString()}
-                </div>
+          <div className={"tokens_card_bot_chapters items-end"}>
+            <div className="tokens_card_bot_chapters-text">
+              {t("home.lvl_prefix")} {card.level + 1}
+            </div>
+            <div className="tokens_card_bot_chapters-wallet">
+              <img src="/media/icons/bitcoin.png" />
+              <div className="tokens_card_bot_chapters-wallet-amount">
+                {formatterNumber?.format(card?.nextPrice) ||
+                  card?.nextPrice?.toLocaleString()}
               </div>
             </div>
-            <div className="tokens_card_bot_chapters flex-1/2">
-              <div className="tokens_card_bot_chapters-text">
-                {t("home.profit_per_hour")}
-              </div>
-              <div className="tokens_card_bot_chapters-wallet">
-                <img src="/media/icons/bitcoin.png" />
-                <div className="tokens_card_bot_chapters-wallet-amount">
-                  +{card.profit.toLocaleString()}
-                </div>
+          </div>
+        </div>
+
+        <hr className="text-[#3d3d3d7a]" />
+
+        <div className="flex justify-between items-center">
+          <div className="tokens_card_bot_chapters">
+            <div className="tokens_card_bot_chapters-text text-[#ffffff7a]">
+              {t("home.profit_per_hour")}
+            </div>
+            <div className="tokens_card_bot_chapters-wallet">
+              <img src="/media/icons/bitcoin.png" />
+              <div className="tokens_card_bot_chapters-wallet-amount text-[#ffffff7a]">
+                {formatterNumber?.format(card.profit) ||
+                  card.profit.toLocaleString()}
               </div>
             </div>
-            {card?.nextPrice && card?.nextProfit && (
-              <>
-                <div className="text-center tokens_card_bot_chapters-text w-full my-2 -ml-3">
-                  {t("home.next_level")}
-                </div>
-                <div className={"tokens_card_bot_chapters flex-1/2"}>
-                  <div className="tokens_card_bot_chapters-text">
-                    {t("home.lvl_prefix")} {card.level + 1}
-                  </div>
-                  <div className="tokens_card_bot_chapters-wallet">
-                    <img src="/media/icons/bitcoin.png" />
-                    <div className="tokens_card_bot_chapters-wallet-amount">
-                      {card?.nextPrice?.toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-                <div className="tokens_card_bot_chapters flex-1/2">
-                  <div className="tokens_card_bot_chapters-text">
-                    {t("home.profit_per_hour")}
-                  </div>
-                  <div className="tokens_card_bot_chapters-wallet">
-                    <img src="/media/icons/bitcoin.png" />
-                    <div className="tokens_card_bot_chapters-wallet-amount">
-                      +{card.nextProfit.toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
+          </div>
+          <img
+            src="/media/icons/triangleRight.svg"
+            className="w-5 h-5"
+            alt="icon"
+          />
+          <div className="tokens_card_bot_chapters items-end">
+            <div className="tokens_card_bot_chapters-text">
+              {t("home.profit_per_hour")}
+            </div>
+            <div className="tokens_card_bot_chapters-wallet">
+              <img src="/media/icons/bitcoin.png" />
+              <div className="tokens_card_bot_chapters-wallet-amount">
+                {formatterNumber?.format(card.nextProfit) ||
+                  card.nextProfit.toLocaleString()}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -142,6 +149,17 @@ export default function CardItem({ card, variant = "default" }: Props) {
           ))}
         </div>
       )}
+      <button
+        className="blue-background rounded-xl p-3.5 text-sm flex items-center justify-center gap-1.5 cursor-pointer"
+        onClick={() => {
+          if (canBuy) {
+            buyCard(card.id);
+          }
+        }}
+      >
+        <img src="/media/icons/bitcoin.png" className="w-4 h-4" />
+        {t("home.buy_btn")}
+      </button>
     </div>
   );
 }

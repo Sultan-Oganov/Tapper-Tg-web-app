@@ -56,9 +56,9 @@
     "card_locked_reason_maxed": "Maximum level reached",
     "card_locked_reason_balance": "Not enough coins",
     "cards_empty": "No cards in this section yet",
-    "lvl_prefix": "Lvl",
-    "profit_per_hour": "Profit per hour",
-    "next_level": "Next level"
+    "lvl_prefix": "Level",
+    "profit_per_hour": "Profit/hour",
+    "buy_btn": "Buy"
   },
 
   "boosters": {
