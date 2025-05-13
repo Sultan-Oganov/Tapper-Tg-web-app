@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { sendSafe } from "@/utils/sendSafe";
 
 export const useCards = () => {
-  const { room, stateData } = useGameStore();
+  const { room } = useGameStore();
   const { setCards, setMenu, setIsLoading } = useCardsStore();
   const { t } = useTranslation();
   const isRequesting = useRef(false);

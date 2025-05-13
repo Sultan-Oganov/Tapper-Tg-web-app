@@ -57,7 +57,8 @@
     "card_locked_reason_balance": "Not enough coins",
     "cards_empty": "No cards in this section yet",
     "lvl_prefix": "Lvl",
-    "profit_per_hour": "Profit per hour"
+    "profit_per_hour": "Profit per hour",
+    "next_level": "Next level"
   },
 
   "boosters": {

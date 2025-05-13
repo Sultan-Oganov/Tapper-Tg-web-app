@@ -8,6 +8,7 @@ import { useGameStore } from "@/store/gameStore";
 import { useGameEvents } from "@/hooks/useGameEvents";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
+import { useCards } from "@/hooks/useCards";
 
 const MAX_TOUCHES = 3;
 
@@ -15,6 +16,8 @@ export default function ExtendedTapper() {
   const { sendClick } = useGameEvents(); // подключаем отправку событий
 
   const { stateData } = useGameStore();
+  useCards();
+
   const divRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<
     { id: number; text: string; offset: number }[]
@@ -197,9 +200,12 @@ export default function ExtendedTapper() {
           TapperBase
         )}
 
-        <div className="flex flex-col w-full">
-          <div className="flex flex-row justify-between w-full progress-text gap-[8px]">
-            <Link to="/level">
+        <div className="flex flex-col w-full gap-3">
+          <div className="flex flex-row justify-between items-center w-full progress-text gap-2">
+            <Link
+              to="/level"
+              className="text-white text-lg border  border-yellow-500 rounded-md px-2.5 py-0.5 hover:text-black transition light-yellow-background"
+            >
               {t("home.lvl_prefix")} {stateData?.energyMaxLevel}
             </Link>
             <div>{Math.round(progress)}%</div>
