@@ -27,7 +27,7 @@ body {
 
 
 main {
-  padding-bottom: 65px;
+  padding-bottom: 95px;
 }
 
 .header {
@@ -455,7 +455,7 @@ main {
 
 .down_taps {
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.02);
+  background: #1c234e;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -466,9 +466,9 @@ main {
 
 .down_taps_card {
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
+  background: #181f4c;
   width: 100%;
-  color: rgba(255, 255, 255, 0.48);
+  color: #fff;
 
   font-size: 13px;
   font-weight: 400;
@@ -1425,12 +1425,12 @@ main {
   gap: 10px;
 }
 
-.tasks_frame:hover {
+.tasks_frame button:hover {
   cursor: pointer;
   background: rgba(255, 255, 255, 0.04);
 }
 
-.tasks_frame:active {
+.tasks_frame button:active {
   cursor: pointer;
   background: radial-gradient(50.00% 50.00% at 50% 50%,rgb(56, 111, 254),rgb(33, 67, 152) 100%);
 }

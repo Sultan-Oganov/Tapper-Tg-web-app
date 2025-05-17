@@ -16,7 +16,7 @@ export interface GameState {
   setIsConnecting: (isConnecting: boolean) => void;
   setIsReconnecting: (isReconnecting: boolean) => void;
   setError: (error: string | null) => void;
-  setStateData: (state: RoomState) => void; // <-- типизируем вход
+  setStateData: (updater: RoomState | ((prev: RoomState) => RoomState)) => void;
   setPlayerId: (id: number) => void;
 }
 
@@ -34,6 +34,14 @@ export const useGameStore = create<GameState>((set) => ({
   setIsConnecting: (isConnecting) => set({ isConnecting }),
   setIsReconnecting: (isReconnecting) => set({ isReconnecting }), // <-- добавили
   setError: (error) => set({ error }),
-  setStateData: (state) => set({ stateData: state }), // <-- типизируем вход
+  setStateData: (updater) =>
+    set((state) => ({
+      stateData:
+        typeof updater === "function"
+          ? state.stateData
+            ? updater(state.stateData)
+            : state.stateData // не обновляем, если stateData ещё null
+          : updater,
+    })),
   setPlayerId: (id) => set({ playerId: id }),
 }));

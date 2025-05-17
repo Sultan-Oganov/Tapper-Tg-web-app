@@ -8,8 +8,8 @@ export default function AppProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { isConnected, isConnecting, isReconnecting, error } = useGameStore();
   useGameClient();
+  const { isConnected, isConnecting, isReconnecting, error } = useGameStore();
 
   const { t } = useTranslation();
 

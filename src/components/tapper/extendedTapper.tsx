@@ -3,12 +3,12 @@
 import { useMemo, useRef, useState, useEffect } from "react";
 import ProgressBar from "@/components/misc/progressBar";
 import BoosterBuy from "@/components/tapper/boosterBuy";
-import MainControllerTab from "@/components/misc/tabs/mainControllerTab";
 import { useGameStore } from "@/store/gameStore";
 import { useGameEvents } from "@/hooks/useGameEvents";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { useCards } from "@/hooks/useCards";
+import { useProfit } from "@/hooks/useProfit";
+import { formatterNumber } from "@/utils/foramatter";
 
 const MAX_TOUCHES = 3;
 
@@ -16,7 +16,7 @@ export default function ExtendedTapper() {
   const { sendClick } = useGameEvents(); // подключаем отправку событий
 
   const { stateData } = useGameStore();
-  useCards();
+  useProfit();
 
   const divRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<
@@ -169,7 +169,11 @@ export default function ExtendedTapper() {
             },
             {
               label: t("home.tapper_per_hour"),
-              value: stateData?.profitPerHour,
+              value: stateData?.profitPerHour
+                ? stateData.profitPerHour > 1000000
+                  ? formatterNumber?.format(stateData?.profitPerHour)
+                  : stateData?.profitPerHour?.toLocaleString()
+                : 0,
             },
           ].map(({ label, value }, i) => (
             <div className="taper_info_section" key={i}>
@@ -206,7 +210,7 @@ export default function ExtendedTapper() {
               to="/level"
               className="text-white text-lg border  border-yellow-500 rounded-md px-2.5 py-0.5 hover:text-black transition light-yellow-background"
             >
-              {t("home.lvl_prefix")} {stateData?.energyMaxLevel}
+              {t("home.lvl_prefix")} {stateData?.level}
             </Link>
             <div>{Math.round(progress)}%</div>
           </div>

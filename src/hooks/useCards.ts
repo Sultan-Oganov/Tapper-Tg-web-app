@@ -4,10 +4,11 @@ import { useCardsStore } from "@/store/cardsStore";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { sendSafe } from "@/utils/sendSafe";
+import { Card } from "@/types/gameEvents";
 
 export const useCards = () => {
   const { room } = useGameStore();
-  const { setCards, setMenu, setIsLoading } = useCardsStore();
+  const { setCards, setMenu, setIsLoading, cards } = useCardsStore();
   const { t } = useTranslation();
   const isRequesting = useRef(false);
 
@@ -27,7 +28,6 @@ export const useCards = () => {
   const buyCard = useCallback(
     (cardId: number) => {
       if (!room) return;
-      setIsLoading(true);
       sendSafe(room, "buyCard", { cardId });
       console.log("[Client] Sent: buyCard", cardId);
     },
@@ -47,27 +47,15 @@ export const useCards = () => {
     });
 
     const unsubscribeBuy = room.onMessage("profitCardsBuyStatus", (data) => {
-      console.log("[Server] profitCardsBuyStatus", data);
-      if (data.status) {
+      if (data.status && data.card) {
+        // 👇 обнови карточку локально без перезагрузки всех карточек
+        const newCards = cards.map((card) =>
+          card.id === data.card.id ? { ...card, ...data.card } : card
+        );
+        setCards(newCards);
         toast.success(data.message || t("toast.card_buy_success"));
-        requestCards();
       } else {
         toast.error(data.message || t("toast.card_buy_error"));
-        setIsLoading(false);
-      }
-    });
-
-    const unsubscribeProfit = room.onMessage("offlineCardProfit", (data) => {
-      console.log("[Server] offlineCardProfit", data);
-      if (data.profit > 0) {
-        toast.success(
-          t("toast.card_profit_collected", {
-            amount: `+${data.profit?.toLocaleString()}`,
-          })
-        );
-        sendSafe(room, "collectCardsProfit");
-        console.log("[Client] Sent: collectCardsProfit (auto)");
-        requestCards();
       }
     });
 
@@ -82,7 +70,6 @@ export const useCards = () => {
     return () => {
       unsubscribeInfo();
       unsubscribeBuy();
-      unsubscribeProfit();
     };
   }, [room, setCards, setMenu, setIsLoading, requestCards, t]);
 

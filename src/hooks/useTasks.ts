@@ -7,7 +7,7 @@ import { sendSafe } from "@/utils/sendSafe";
 
 export const useTasks = () => {
   const { room } = useGameStore();
-  const { setTasks, updateTask } = useTasksStore();
+  const { setTasks, removeTask } = useTasksStore();
   const { t } = useTranslation();
 
   const requestTasks = useCallback(() => {
@@ -39,7 +39,7 @@ export const useTasks = () => {
         toast.success(
           t("toasts.task_reward_success", { amount: data.reward.claim })
         );
-        updateTask(data.reward.taskId);
+        removeTask(data.reward.taskId);
       } else {
         toast.error(data.message || t("toasts.task_reward_error"));
       }
@@ -49,7 +49,7 @@ export const useTasks = () => {
       unsubscribeList();
       unsubscribeStatus();
     };
-  }, [room]);
+  }, [room, setTasks, removeTask, t]);
 
   return { requestTasks, claimTask };
 };

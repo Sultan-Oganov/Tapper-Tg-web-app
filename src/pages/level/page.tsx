@@ -31,12 +31,12 @@ const levelBackgrounds = [
 export default function Level() {
   useLevels();
   const { room } = useGameStore();
-  const { levels, current, topPlayers } = useLevelsStore();
+  const { levels, current, topPlayers, setLevels } = useLevelsStore();
   const { t } = useTranslation();
 
+  const sliderRef = useRef<any>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const sliderRef = useRef<any>(null);
   const next = () => {
     sliderRef.current?.slickNext();
   };
@@ -44,6 +44,11 @@ export default function Level() {
   const previous = () => {
     sliderRef.current?.slickPrev();
   };
+
+  useEffect(() => {
+    const index = levels?.findIndex((l) => l?.level === current);
+    sliderRef.current?.slickGoTo(index, true);
+  }, [sliderRef.current]);
 
   const settings = {
     dots: false,
@@ -55,6 +60,7 @@ export default function Level() {
       setCurrentSlide(next);
       if (room && levels[next]?.level) {
         sendSafe(room, "helpLevels", { level: levels[next].level });
+        setLevels(levels[next].level, levels);
       }
     },
   };
@@ -148,31 +154,31 @@ export default function Level() {
           {topPlayers.length > 0 ? (
             topPlayers.map((player, i) => (
               <div
-                key={`${player.username}-${i}`}
+                key={`${player?.username}-${i}`}
                 className="friends_invited_frame py-[8px] px-[12px] flex justify-between items-center"
               >
                 <div className="flex items-center gap-2">
                   <img
                     className="w-10 h-10 rounded-full"
                     src={"/media/images/man_yellow.png"}
-                    alt={player.username}
+                    alt={player?.username}
                   />
                   <div>
                     <div className="font-bold text-white">
-                      {player.username}
+                      {player?.username}
                     </div>
                     <div className="flex items-center gap-1 text-white/70 text-sm">
                       <img
                         src="/media/icons/bitcoin.svg"
                         className="!w-5 !h-5"
                       />
-                      {player.balance}
+                      {player?.balance?.toLocaleString()}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1 text-white font-bold text-sm">
-                  <span>{player.total}</span>
+                  <span>{player?.total}</span>
                   <img src={`/media/icons/medal.png`} className="w-5 h-5" />
                 </div>
               </div>

@@ -83,13 +83,13 @@ export default function TaskContainer() {
                   href={task.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-[#2B3569] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#3B4579] transition-colors"
+                  className="bg-[#2B3569] text-white px-2 py-2 rounded-lg text-sm flex items-center justify-center hover:bg-[#3B4579] transition-colors max-w-fit"
                   onClick={() => handleSubscribe(task.id)}
                 >
                   {t("tasks.subscribe")}
                 </a>
               )}
-              {isCanClick && (isSubscribed || task.status === "claim") && (
+              {!task.finished && (
                 <button
                   onClick={() => claimTask(task.id)}
                   className="bg-[#2B3569] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#3B4579] transition-colors"

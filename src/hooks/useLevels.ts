@@ -10,16 +10,10 @@ export const useLevels = () => {
   const { setLevels, setTopPlayers } = useLevelsStore();
   const { t } = useTranslation();
 
-  const previousLevelRef = useRef<number | null>(null);
-
   useEffect(() => {
-    if (!room || !stateData?.level) return;
+    if (!room) return;
 
-    // Если уровень изменился — отправляем helpLevels
-    if (previousLevelRef.current !== stateData.level) {
-      previousLevelRef.current = stateData.level;
-      sendSafe(room, "helpLevels", { level: stateData.level });
-    }
+    sendSafe(room, "helpLevels", {});
 
     const unsubscribe = room.onMessage("levelsData", (data) => {
       console.log("[levelsData] получено от сервера:", data);
@@ -29,7 +23,10 @@ export const useLevels = () => {
         return;
       }
 
-      setLevels(data.currentLevel ?? 0, data.levels);
+      const activeLevel = data.currentLevel;
+
+      setLevels(activeLevel, data.levels);
+
       if (data.requestedLevel?.rating) {
         setTopPlayers(data.requestedLevel.rating);
       }
@@ -38,5 +35,5 @@ export const useLevels = () => {
     return () => {
       unsubscribe();
     };
-  }, [room, setLevels, setTopPlayers, stateData?.level]);
+  }, [room, setLevels, setTopPlayers]);
 };

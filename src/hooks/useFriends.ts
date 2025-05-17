@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { sendSafe } from "@/utils/sendSafe";
 
 export const useFriends = () => {
-  const { room } = useGameStore();
+  const { room, stateData, setStateData } = useGameStore(); // 👈 добавили stateData и setStateData
   const {
     setFriends,
     appendFriends,
@@ -46,10 +46,22 @@ export const useFriends = () => {
     const unsubscribeReward = room.onMessage("getFriendReward", (data) => {
       console.log("[Server] getFriendReward", data);
 
-      if (data.success) {
+      if (data.success && data.reward) {
         toast.success(t("toast.friend_reward_success"));
-        reset();
-        sendSafe(room, "getFriendsList", { page: 1, pageSize: 10 });
+
+        // 1. Обновить баланс
+        setStateData((prevState) => ({
+          ...prevState!,
+          balance: prevState!.balance + data.reward.claim,
+        }));
+
+        // 2. Обновить статус друга как завершённый
+        setFriends(
+          friends.map((f) =>
+            f.id === data.reward.rewardId ? { ...f, finished: true } : f
+          ),
+          total
+        );
       } else {
         toast.error(data.message || t("toast.friend_reward_error"));
       }
@@ -62,12 +74,23 @@ export const useFriends = () => {
       unsubscribe();
       unsubscribeReward();
     };
-  }, [room]);
+  }, [
+    room,
+    page,
+    setFriends,
+    appendFriends,
+    startLoading,
+    stopLoading,
+    reset,
+    setStateData,
+    stateData,
+    t,
+    friends,
+    total,
+  ]);
 
   const loadNextPage = () => {
-    if (!room || isLoading) return;
-
-    if (friends.length >= total) return;
+    if (!room || isLoading || friends.length >= total) return;
 
     startLoading();
     sendSafe(room, "getFriendsList", { page: page + 1, pageSize: 10 });
@@ -75,7 +98,6 @@ export const useFriends = () => {
 
   const claimReward = (rewardId: number) => {
     if (!room) return;
-    console.log("[Client] Sending getFriendReward", rewardId);
     sendSafe(room, "getFriendReward", { rewardId });
   };
 

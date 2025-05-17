@@ -1,6 +1,7 @@
 import React from "react";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useTranslation } from "react-i18next";
+import Loader from "../misc/loader";
 
 const apiUrl = "https://api.nerublix.com";
 
@@ -12,7 +13,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
     return <div>{t("auth.please_open_in_telegram")}</div>;
   }
 
-  if (!auth) return <div>{t("common.loading")}</div>;
+  if (!auth) return <Loader />;
 
   if (auth.error) {
     // TODO: Расскоментировать на продакшене
