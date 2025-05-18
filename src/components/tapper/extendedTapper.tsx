@@ -204,12 +204,9 @@ export default function ExtendedTapper() {
           TapperBase
         )}
 
-        <div className="flex flex-col w-full gap-3">
+        <div className="flex flex-col w-full gap-1">
           <div className="flex flex-row justify-between items-center w-full progress-text gap-2">
-            <Link
-              to="/level"
-              className="text-white text-lg border  border-yellow-500 rounded-md px-2.5 py-0.5 hover:text-black transition light-yellow-background"
-            >
+            <Link to="/level" className="shine-link">
               {t("home.lvl_prefix")} {stateData?.level}
             </Link>
             <div>{Math.round(progress)}%</div>

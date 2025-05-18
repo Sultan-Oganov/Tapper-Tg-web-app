@@ -3187,3 +3187,30 @@ main {
   -ms-overflow-style: none; /* IE/Edge */
   scrollbar-width: none; /* Firefox */
 }
+
+.shine-link {
+  position: relative;
+  color: #FFFFFF7A;
+  background: linear-gradient(
+    90deg,
+    #FFFFFF7A 0%,
+    #fff 40%,
+    #FFFFFF7A 60%,
+    #FFFFFF7A 100%
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: shine-text 3.5s linear infinite;
+}
+
+@keyframes shine-text {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
