@@ -3,17 +3,27 @@
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { useCardsStore } from "@/store/cardsStore";
 import CardTabs from "./сardTabs";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCards } from "@/hooks/useCards";
 
 export default function MainControllerTab() {
   const { menu } = useCardsStore();
   const { requestCards } = useCards();
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
     requestCards();
   }, []);
+
+  useEffect(() => {
+    const selectedTab = tabRefs.current[selectedIndex];
+    selectedTab?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    });
+  }, [selectedIndex]);
 
   return (
     <TabGroup
@@ -21,9 +31,15 @@ export default function MainControllerTab() {
       selectedIndex={selectedIndex}
       onChange={setSelectedIndex}
     >
-      <TabList className="info_taps">
-        {menu.map((category) => (
-          <Tab key={category.id} className="info_taps_card py-[8px]">
+      <TabList className="info_taps overflow-x-auto whitespace-nowrap no-scrollbar">
+        {menu.map((category, index) => (
+          <Tab
+            key={category.id}
+            className="info_taps_card py-[8px]"
+            ref={(el: HTMLButtonElement | null) => {
+              tabRefs.current[index] = el;
+            }}
+          >
             {category.name}
           </Tab>
         ))}

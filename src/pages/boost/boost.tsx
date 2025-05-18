@@ -18,7 +18,7 @@ export default function Boost() {
             </div>
           </div>
 
-          <div className="taper_info_section">
+          <div className="taper_info_section !w-full">
             <div className="taper_info_section_clarification">
               {t("home.profit_per_hour")}
             </div>

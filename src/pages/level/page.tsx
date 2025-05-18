@@ -60,7 +60,7 @@ export default function Level() {
       setCurrentSlide(next);
       if (room && levels[next]?.level) {
         sendSafe(room, "helpLevels", { level: levels[next].level });
-        setLevels(levels[next].level, levels);
+        // setLevels(levels[next].level, levels);
       }
     },
   };
@@ -109,11 +109,10 @@ export default function Level() {
                         <div className="text-xl font-bold text-white">
                           {item?.name}
                         </div>
-                        {isCurrent && (
-                          <div className="text-md  font-bold text-center mb-1">
-                            {t("level.your_level")}
-                          </div>
-                        )}
+
+                        <div className="text-md  font-bold text-center mb-1 min-h-6">
+                          {isCurrent && t("level.your_level")}
+                        </div>
                       </div>
                       <img
                         src="/media/images/green-cashier.png"

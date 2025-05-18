@@ -218,10 +218,11 @@ main {
 .taper_info {
   display: flex;
   gap: 4px;
+  width: 100%;
 }
 
 .taper_info_section {
-  width: 26vw;
+  width: 33%;
   height: 50px;
   padding: 7px 4px;
   gap: 2px;
@@ -312,6 +313,8 @@ main {
 }
 
 .taper_booster_card_frame {
+  width: 33%;
+  aspect-ratio: 1 / 1;
   border-radius: 12px;
   padding: 16px;
   display: flex;
@@ -428,7 +431,7 @@ main {
   background: rgba(255, 255, 255, 0.02);
   width: 100%;
   color: rgba(255, 255, 255, 0.48);
-
+  padding: 8px 12px;
   font-size: 13px;
   font-weight: 400;
   line-height: 148.8%;
@@ -3174,4 +3177,13 @@ main {
 .game__text-break {
   width: 50%;
   font-size: 12px;
+}
+
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none; /* Firefox */
 }

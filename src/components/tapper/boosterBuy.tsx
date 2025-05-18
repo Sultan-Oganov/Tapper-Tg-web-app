@@ -13,7 +13,7 @@ export default function BoosterBuy() {
   const maxBoosts = 5; // <-- здесь можешь заменить на dynamic если появится в state
 
   return (
-    <div className={"flex flex-col"}>
+    <div className={"w-full flex flex-col"}>
       <div className={"taper_booster_try"}>
         <div className={"taper_booster_try_title"}>
           {t("home.try_boosters")}
