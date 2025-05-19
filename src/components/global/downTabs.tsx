@@ -22,6 +22,7 @@ export default function DownTabs() {
         </Link>
         <Link
           to={"/boost"}
+          state={{ showBoost: false }}
           className={
             location.pathname == "/boost"
               ? "active down_taps_card py-[8px]"

@@ -123,7 +123,11 @@ export default function DefaultTapper() {
             </div>
 
             <div className="boost_buttons">
-              <Link to="/boost" className="yellow-background">
+              <Link
+                to="/boost"
+                state={{ showBoost: true }}
+                className="yellow-background"
+              >
                 <div className="boost_icon">
                   <img src="/media/icons/lighting.png" />
                 </div>

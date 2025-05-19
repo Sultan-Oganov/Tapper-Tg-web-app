@@ -100,45 +100,27 @@ export default function ExtendedTapper() {
   const TapperBase = useMemo(
     () =>
       !stateData ? null : (
-        <>
-          <div
-            className="boost_frame_machine !relative"
-            ref={divRef}
-            onClick={handleDivClick}
-            onTouchStart={handleTouch}
-          >
-            <img
-              src="/media/images/cashier.png"
-              draggable={false}
-              alt="cashier"
-            />
-            {messages?.map((msg) => (
-              <div
-                key={msg.id}
-                className="floating-text"
-                style={{ left: `${msg.offset}px`, top: 0 }}
-              >
-                {msg.text}
-              </div>
-            ))}
-          </div>
-          <div className="boost_buttons">
-            <Link to="/boost" className="yellow-background">
-              <div className="boost_icon">
-                <img src="/media/icons/lighting.png" />
-              </div>
-              <div className="boost_text">
-                {stateData?.energy}/{stateData?.energyMax}
-              </div>
-            </Link>
-            <Link to="/booster" className="blue-background">
-              <div className="boost_icon">
-                <img src="/media/icons/shuttle.png" />
-              </div>
-              <div className="boost_text">{t("buttons.boost")}</div>
-            </Link>
-          </div>
-        </>
+        <div
+          className="boost_frame_machine !relative"
+          ref={divRef}
+          onClick={handleDivClick}
+          onTouchStart={handleTouch}
+        >
+          <img
+            src="/media/images/cashier.png"
+            draggable={false}
+            alt="cashier"
+          />
+          {messages?.map((msg) => (
+            <div
+              key={msg.id}
+              className="floating-text"
+              style={{ left: `${msg.offset}px`, top: 0 }}
+            >
+              {msg.text}
+            </div>
+          ))}
+        </div>
       ),
     [messages, stateData, t]
   );
@@ -152,7 +134,7 @@ export default function ExtendedTapper() {
 
   return (
     <div className="boost">
-      <div className="boost_frame px-[12px]">
+      <div className="boost_frame px-[12px] min-h-[80vh]">
         <div className="taper_info">
           {[
             {
@@ -165,7 +147,14 @@ export default function ExtendedTapper() {
             },
             {
               label: t("home.tapper_to_upgrade"),
-              value: stateData?.clicksRemainingForNextLevel,
+              value:
+                Number(stateData?.clicksRemainingForNextLevel) > 1000
+                  ? formatterNumber?.format(
+                      Number(stateData?.clicksRemainingForNextLevel)
+                    )
+                  : Number(
+                      stateData?.clicksRemainingForNextLevel
+                    )?.toLocaleString(),
             },
             {
               label: t("home.tapper_per_hour"),
@@ -188,22 +177,25 @@ export default function ExtendedTapper() {
           ))}
         </div>
 
-        <div className="taper_wallet">
-          <img src="/media/icons/bitcoin.svg" />
-          <div className="taper_wallet_amount font-[family-name:var(--font-calculatrix)]">
-            {stateData?.balance?.toLocaleString()}
-          </div>
-        </div>
-
-        {!DefaultBoost ? (
+        {/* {!DefaultBoost ? (
           <>
             <BoosterBuy />
-            {/* <MainControllerTab /> */}
+            <MainControllerTab />
           </>
         ) : (
           TapperBase
-        )}
+        )} */}
 
+        <div className="grow w-full flex flex-col gap-5 items-center justify-center">
+          {!DefaultBoost && TapperBase}
+
+          <div className="taper_wallet">
+            <img src="/media/icons/bitcoin.svg" />
+            <div className="taper_wallet_amount font-[family-name:var(--font-calculatrix)]">
+              {stateData?.balance?.toLocaleString()}
+            </div>
+          </div>
+        </div>
         <div className="flex flex-col w-full gap-1">
           <div className="flex flex-row justify-between items-center w-full progress-text gap-2">
             <Link to="/level" className="shine-link">
@@ -214,7 +206,26 @@ export default function ExtendedTapper() {
           <ProgressBar energy={progress} />
         </div>
 
-        {!DefaultBoost && TapperBase}
+        <div className="boost_buttons">
+          <Link
+            to="/boost"
+            state={{ showBoost: true }}
+            className="yellow-background"
+          >
+            <div className="boost_icon">
+              <img src="/media/icons/lighting.png" />
+            </div>
+            <div className="boost_text">
+              {stateData?.energy}/{stateData?.energyMax}
+            </div>
+          </Link>
+          <Link to="/booster" className="blue-background">
+            <div className="boost_icon">
+              <img src="/media/icons/shuttle.png" />
+            </div>
+            <div className="boost_text">{t("buttons.boost")}</div>
+          </Link>
+        </div>
       </div>
     </div>
   );

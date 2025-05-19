@@ -91,7 +91,7 @@ export default function BigCard({ card, reasons }: Props) {
           </div>
         </div>
 
-        <hr className="text-[#3d3d3d7a]" />
+        <hr className="text-[#FFFFFF08]" />
 
         <div className="flex justify-between items-center">
           <div className="tokens_card_bot_chapters">

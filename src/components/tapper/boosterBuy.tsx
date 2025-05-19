@@ -1,8 +1,11 @@
 import { useGameStore } from "@/store/gameStore";
+import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
-
-export default function BoosterBuy() {
+interface Props {
+  className?: string;
+}
+const BoosterBuy: React.FC<Props> = ({ className }) => {
   const { stateData } = useGameStore();
   const { t } = useTranslation();
   const activeCards =
@@ -13,7 +16,7 @@ export default function BoosterBuy() {
   const maxBoosts = 5; // <-- здесь можешь заменить на dynamic если появится в state
 
   return (
-    <div className={"w-full flex flex-col"}>
+    <div className={clsx("w-full flex flex-col", className)}>
       <div className={"taper_booster_try"}>
         <div className={"taper_booster_try_title"}>
           {t("home.try_boosters")}
@@ -50,4 +53,6 @@ export default function BoosterBuy() {
       </div>
     </div>
   );
-}
+};
+
+export default BoosterBuy;
