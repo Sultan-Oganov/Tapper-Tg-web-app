@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useGameStore } from "@/store/gameStore";
 import { useFriendsStore } from "@/store/friendsStore";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { sendSafe } from "@/utils/sendSafe";
 
 export const useFriends = () => {
+  const hasFetchedRef = useRef(false);
   const { room, stateData, setStateData } = useGameStore(); // 👈 добавили stateData и setStateData
   const {
     setFriends,
@@ -23,7 +24,9 @@ export const useFriends = () => {
   const { t } = useTranslation();
 
   useEffect(() => {
-    if (!room) return;
+    if (!room || hasFetchedRef.current) return;
+
+    hasFetchedRef.current = true;
 
     const unsubscribe = room.onMessage("friendsList", (data) => {
       console.log("[Server] friendsList", data);
@@ -74,20 +77,14 @@ export const useFriends = () => {
       unsubscribe();
       unsubscribeReward();
     };
-  }, [
-    room,
-    page,
-    setFriends,
-    appendFriends,
-    startLoading,
-    stopLoading,
-    reset,
-    setStateData,
-    stateData,
-    t,
-    friends,
-    total,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room]);
+
+  useEffect(() => {
+    return () => {
+      hasFetchedRef.current = false;
+    };
+  }, []);
 
   const loadNextPage = () => {
     if (!room || isLoading || friends.length >= total) return;
