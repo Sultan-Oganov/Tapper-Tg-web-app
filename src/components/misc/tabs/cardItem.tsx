@@ -16,7 +16,10 @@ interface Props {
 export default function CardItem({ card, variant = "default" }: Props) {
   const { buyCard } = useCards();
   const { stateData } = useGameStore();
-  const { t } = useTranslation();
+  const {
+    t,
+    i18n: { language },
+  } = useTranslation();
 
   const level = stateData?.level ?? 0;
   const reasons: string[] = [];
@@ -83,7 +86,7 @@ export default function CardItem({ card, variant = "default" }: Props) {
             <div className="tokens_card_bot_chapters-wallet">
               <img src="/media/icons/bitcoin.png" />
               <div className="tokens_card_bot_chapters-wallet-amount text-[#ffffff7a]">
-                {formatterNumber?.format(card?.price) ||
+                {formatterNumber(card?.price, language) ||
                   card?.price?.toLocaleString()}
               </div>
             </div>
@@ -100,7 +103,7 @@ export default function CardItem({ card, variant = "default" }: Props) {
             <div className="tokens_card_bot_chapters-wallet">
               <img src="/media/icons/bitcoin.png" />
               <div className="tokens_card_bot_chapters-wallet-amount">
-                {formatterNumber?.format(card?.nextPrice) ||
+                {formatterNumber(card?.nextPrice, language) ||
                   card?.nextPrice?.toLocaleString()}
               </div>
             </div>
@@ -117,7 +120,7 @@ export default function CardItem({ card, variant = "default" }: Props) {
             <div className="tokens_card_bot_chapters-wallet">
               <img src="/media/icons/bitcoin.png" />
               <div className="tokens_card_bot_chapters-wallet-amount text-[#ffffff7a]">
-                {formatterNumber?.format(card.profit) ||
+                {formatterNumber(card.profit, language) ||
                   card.profit.toLocaleString()}
               </div>
             </div>
@@ -134,7 +137,7 @@ export default function CardItem({ card, variant = "default" }: Props) {
             <div className="tokens_card_bot_chapters-wallet">
               <img src="/media/icons/bitcoin.png" />
               <div className="tokens_card_bot_chapters-wallet-amount">
-                {formatterNumber?.format(card.nextProfit) ||
+                {formatterNumber(card.nextProfit, language) ||
                   card.nextProfit.toLocaleString()}
               </div>
             </div>

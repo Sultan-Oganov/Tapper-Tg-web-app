@@ -49,19 +49,21 @@ export const useFriends = () => {
     const unsubscribeReward = room.onMessage("getFriendReward", (data) => {
       console.log("[Server] getFriendReward", data);
 
-      if (data.success && data.reward) {
+      if (data.success) {
         toast.success(t("toast.friend_reward_success"));
 
-        // 1. Обновить баланс
-        setStateData((prevState) => ({
-          ...prevState!,
-          balance: prevState!.balance + data.reward.claim,
-        }));
+        // 1. Обновляем баланс, если reward.claim есть
+        if (data.reward?.claim) {
+          setStateData((prev) => ({
+            ...prev!,
+            balance: prev!.balance + data.reward.claim,
+          }));
+        }
 
-        // 2. Обновить статус друга как завершённый
+        // 2. Обновляем статус друга как завершённый (даже если reward не пришёл)
         setFriends(
           friends.map((f) =>
-            f.id === data.reward.rewardId ? { ...f, finished: true } : f
+            f.id === data.reward?.rewardId ? { ...f, finished: true } : f
           ),
           total
         );

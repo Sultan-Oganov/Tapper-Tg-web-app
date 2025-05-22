@@ -7,7 +7,10 @@ import { useLocation, useParams } from "react-router";
 
 export default function Boost() {
   const { stateData } = useGameStore();
-  const { t } = useTranslation();
+  const {
+    t,
+    i18n: { language },
+  } = useTranslation();
   const {
     state: { showBoost },
   } = useLocation();
@@ -31,8 +34,9 @@ export default function Boost() {
                   label: t("home.tapper_to_upgrade"),
                   value:
                     Number(stateData?.clicksRemainingForNextLevel) > 1000
-                      ? formatterNumber?.format(
-                          Number(stateData?.clicksRemainingForNextLevel)
+                      ? formatterNumber(
+                          Number(stateData?.clicksRemainingForNextLevel),
+                          language
                         )
                       : Number(
                           stateData?.clicksRemainingForNextLevel
@@ -42,7 +46,7 @@ export default function Boost() {
                   label: t("home.tapper_per_hour"),
                   value: stateData?.profitPerHour
                     ? stateData.profitPerHour > 1000000
-                      ? formatterNumber?.format(stateData?.profitPerHour)
+                      ? formatterNumber(stateData?.profitPerHour, language)
                       : stateData?.profitPerHour?.toLocaleString()
                     : 0,
                 },

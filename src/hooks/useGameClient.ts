@@ -52,6 +52,7 @@ export const useGameClient = () => {
       });
 
       room.onMessage("serverTime", (data) => {
+        console.log("[serverTime]", data); // теперь регистрируем!
         setPlayerId(data?.playerId);
       });
 

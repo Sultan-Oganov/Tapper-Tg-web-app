@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useTasksStore } from "@/store/tasksStore";
 import { useTasks } from "@/hooks/useTasks";
 import clsx from "clsx";
@@ -19,7 +19,6 @@ export default function TaskContainer() {
   const { tasks } = useTasksStore();
   const { requestTasks, claimTask } = useTasks();
   const { t } = useTranslation();
-  const [subscribedTasks, setSubscribedTasks] = useState<number[]>([]);
 
   const taskTitles: Record<string, string> = {
     subscribe_channel: t("taskTitles.subscribe_channel"),
@@ -28,10 +27,6 @@ export default function TaskContainer() {
     invite_friends_10: t("taskTitles.invite_friends_10"),
     deposit_10: t("taskTitles.deposit_10"),
     play_crash_10: t("taskTitles.play_crash_10"),
-  };
-
-  const handleSubscribe = (taskId: number) => {
-    setSubscribedTasks((prev) => [...prev, taskId]);
   };
 
   useEffect(() => {
@@ -45,10 +40,9 @@ export default function TaskContainer() {
   return (
     <div className="tasks_container">
       {tasks.map((task) => {
-        const isCanClick =
-          (task.status === "claim" || task.status === "active") &&
+        const isClaimable =
+          (task.status === "active" || task.status === "claim") &&
           !task.finished;
-        const isSubscribed = subscribedTasks.includes(task.id);
 
         return (
           <div
@@ -78,18 +72,18 @@ export default function TaskContainer() {
             </div>
 
             <div className="flex gap-2">
-              {task.url && task.status === "active" && !isSubscribed && (
+              {task.url && task.status === "active" && (
                 <a
                   href={task.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="bg-[#2B3569] text-white px-2 py-2 rounded-lg text-sm flex items-center justify-center hover:bg-[#3B4579] transition-colors max-w-fit"
-                  onClick={() => handleSubscribe(task.id)}
                 >
                   {t("tasks.subscribe")}
                 </a>
               )}
-              {!task.finished && (
+
+              {isClaimable && (
                 <button
                   onClick={() => claimTask(task.id)}
                   className="bg-[#2B3569] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#3B4579] transition-colors"

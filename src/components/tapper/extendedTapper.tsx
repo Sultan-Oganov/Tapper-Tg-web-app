@@ -24,7 +24,10 @@ export default function ExtendedTapper() {
   >([]);
   const [DefaultBoost] = useState(false);
   const [charge] = useState(500);
-  const { t } = useTranslation();
+  const {
+    t,
+    i18n: { language },
+  } = useTranslation();
 
   const getRandomOffset = () => Math.floor(Math.random() * 100) + 50;
 
@@ -149,8 +152,9 @@ export default function ExtendedTapper() {
               label: t("home.tapper_to_upgrade"),
               value:
                 Number(stateData?.clicksRemainingForNextLevel) > 1000
-                  ? formatterNumber?.format(
-                      Number(stateData?.clicksRemainingForNextLevel)
+                  ? formatterNumber(
+                      Number(stateData?.clicksRemainingForNextLevel),
+                      language
                     )
                   : Number(
                       stateData?.clicksRemainingForNextLevel
@@ -160,7 +164,7 @@ export default function ExtendedTapper() {
               label: t("home.tapper_per_hour"),
               value: stateData?.profitPerHour
                 ? stateData.profitPerHour > 1000000
-                  ? formatterNumber?.format(stateData?.profitPerHour)
+                  ? formatterNumber(stateData?.profitPerHour, language)
                   : stateData?.profitPerHour?.toLocaleString()
                 : 0,
             },

@@ -36,6 +36,7 @@ export default function Level() {
 
   const sliderRef = useRef<any>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [wasManuallyScrolled, setWasManuallyScrolled] = useState(false);
 
   const next = () => {
     sliderRef.current?.slickNext();
@@ -45,11 +46,6 @@ export default function Level() {
     sliderRef.current?.slickPrev();
   };
 
-  useEffect(() => {
-    const index = levels?.findIndex((l) => l?.level === current);
-    sliderRef.current?.slickGoTo(index, true);
-  }, [sliderRef.current]);
-
   const settings = {
     dots: false,
     infinite: true,
@@ -58,12 +54,29 @@ export default function Level() {
     slidesToScroll: 1,
     beforeChange: (_: number, next: number) => {
       setCurrentSlide(next);
-      if (room && levels[next]?.level) {
-        sendSafe(room, "helpLevels", { level: levels[next].level });
-        // setLevels(levels[next].level, levels);
+
+      if (!wasManuallyScrolled) {
+        setWasManuallyScrolled(true);
+        return;
+      }
+
+      const levelToSend = levels[next]?.level;
+
+      // ⛔ блокируем бесконечную пересылку
+      if (room && levelToSend && levelToSend !== current) {
+        sendSafe(room, "helpLevels", { level: levelToSend });
       }
     },
   };
+
+  useEffect(() => {
+    if (!sliderRef.current || !levels?.length || !current) return;
+
+    const index = levels.findIndex((l) => l.level === current);
+    if (index >= 0) {
+      sliderRef.current.slickGoTo(index, true);
+    }
+  }, [levels, current]);
 
   return (
     <div className={"h-[calc(100vh-75px)] flex flex-col justify-between"}>
@@ -79,8 +92,8 @@ export default function Level() {
                 src="/media/icons/arrow.svg"
                 alt="prev"
               />
-              <div className="text-xs text-white opacity-0 group-hover:opacity-100 transition absolute">
-                {t("level.back")}
+              <div className="text-[#FFFFFF3D] text-base font-semibold transition absolute left-0">
+                {levels[currentSlide - 1]?.name || ""}
               </div>
             </button>
 
@@ -93,7 +106,7 @@ export default function Level() {
             >
               <Slider ref={sliderRef} {...settings}>
                 {levels.map((item) => {
-                  const isCurrent = item.level === current;
+                  // const isCurrent = item.level === current;
 
                   return (
                     <div
@@ -110,9 +123,9 @@ export default function Level() {
                           {item?.name}
                         </div>
 
-                        <div className="text-md  font-bold text-center mb-1 min-h-6">
+                        {/* <div className="text-md  font-bold text-center mb-1 min-h-6">
                           {isCurrent && t("level.your_level")}
-                        </div>
+                        </div> */}
                       </div>
                       <img
                         src="/media/images/green-cashier.png"
@@ -140,8 +153,8 @@ export default function Level() {
                 src="/media/icons/arrow.svg"
                 alt="next"
               />
-              <div className="text-xs text-white opacity-0 group-hover:opacity-100 transition absolute -left-3">
-                {t("level.next")}
+              <div className="text-[#FFFFFF3D] text-base font-semibold transition absolute right-0">
+                {levels[currentSlide + 1]?.name || ""}
               </div>
             </button>
           </div>

@@ -6,12 +6,16 @@ import { useGameEvents } from "@/hooks/useGameEvents";
 import { toast } from "sonner";
 import { Dialog } from "@headlessui/react";
 import { useTranslation } from "react-i18next";
+import { formatterNumber } from "@/utils/foramatter";
 
 export default function UpgradeButton({ info }: { info: any }) {
   const { stateData } = useGameStore();
   const { buyMultiTap, buyEnergyUpgrade } = useGameEvents();
   const [open, setOpen] = useState(false);
-  const { t } = useTranslation();
+  const {
+    t,
+    i18n: { language },
+  } = useTranslation();
   const isAvailable =
     info.unlocked && stateData?.balance && stateData?.balance >= info.price;
 
@@ -64,7 +68,9 @@ export default function UpgradeButton({ info }: { info: any }) {
             <div className={"taper_info_section_counting px-[13.5px]"}>
               <img src={"/media/icons/bitcoin.svg"} />
               <div className={"taper_info_section_counting-quantity"}>
-                {info.price.toLocaleString()}
+                {Number(info.price) > 1000
+                  ? formatterNumber(Number(info.price), language)
+                  : Number(info.price)?.toLocaleString()}
               </div>
             </div>
           </div>
@@ -91,7 +97,12 @@ export default function UpgradeButton({ info }: { info: any }) {
               <div className="text-white/70">Lvl {info.lvl}</div>
               <div className="flex items-center gap-1">
                 <img src="/media/icons/bitcoin.svg" className="w-4 h-4" />
-                <span>{info.price.toLocaleString()}</span>
+                <span>
+                  {info.price.toLocaleString()}
+                  {/* {Number(info.price) > 1000
+                    ? formatterNumber(Number(info.price), language)
+                    : Number(info.price)?.toLocaleString()} */}
+                </span>
               </div>
             </div>
             <button
